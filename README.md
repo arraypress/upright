@@ -46,8 +46,8 @@ Installing it shows no warnings. Single-key mode asks for site access when you s
 Needs Chrome 120 or later.
 
 1. Download or clone this repository.
-2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and choose this
-   folder.
+2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and choose the
+   `extension/` folder.
 
 ## Development
 
@@ -61,6 +61,37 @@ npm run package      # tests, then release/upright-<version>.zip for the Chrome 
 How it works inside (finding the right image, composing with the page’s own styles, the viewer,
 wording rules) is in [DEVELOPMENT.md](DEVELOPMENT.md). Store listing text and screenshots:
 `CHROMEWEBSTORE.md` and `store/`.
+
+## Layout
+
+The extension is the `extension/` folder: it's what you load in Chrome, and exactly what
+`npm run package` zips (less the icons' SVG sources). The rest of the repo is the project around it.
+
+```
+upright/
+├── README.md  LICENSE  PRIVACY.md  CHANGELOG.md  CHROMEWEBSTORE.md  DEVELOPMENT.md
+├── package.json  package-lock.json  .gitignore
+├── extension/                  the extension: load this folder, zip its contents
+│   ├── manifest.json
+│   ├── _locales/               en and en_GB
+│   ├── background/             the service worker: background.js (menu, shortcuts), menu.js,
+│   │                           migrate.js, toolbar-theme.js
+│   ├── content/                single-key mode, in web pages: keys-loader.js, keys.js
+│   ├── offscreen/              offscreen.html/.js: tells the worker Chrome's light or dark mode
+│   ├── options/                the settings page: options.html/.css/.js, about-links.js
+│   ├── viewer/                 the full-window viewer: viewer.html/.css/.js, viewer-math.js
+│   ├── shared/                 loaded by more than one of those: transform.js (the maths),
+│   │                           page.js (run in the page), rotate.js, settings.js, sites.js,
+│   │                           registration.js, toolbar-scheme.js, chrome-ui.css (the shared
+│   │                           design kit's copy)
+│   └── icons/                  the extension icons (and icon.svg), and toolbar/ (the light and
+│                               dark glyph)
+├── test/                       unit tests (vitest), and e2e/ (Playwright checks in real Chromium,
+│                               with their fixtures and the test build's hook)
+├── scripts/                    packaging, the e2e build, icon rendering, kit check, placeholder
+│                               warning
+└── store/                      Chrome Web Store screenshots and promo tile, and tools/ that make them
+```
 
 ## License
 

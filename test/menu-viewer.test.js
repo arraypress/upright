@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { actionFor, menuItems, OPEN_ID, PARENT_ID } from '../menu.js';
-import { ALL_SITES, resolveMatches } from '../registration.js';
-import { DEFAULTS, normalizeSettings } from '../settings.js';
-import { neverPatterns, originPattern, siteOrigin } from '../sites.js';
-import { readViewerUrl, viewerUrl } from '../rotate.js';
-import { ACTIONS } from '../transform.js';
-import { copyFile, fitZoom, nextZoom } from '../viewer-math.js';
+import { actionFor, menuItems, OPEN_ID, PARENT_ID } from '../extension/background/menu.js';
+import { ALL_SITES, resolveMatches } from '../extension/shared/registration.js';
+import { DEFAULTS, normalizeSettings } from '../extension/shared/settings.js';
+import { neverPatterns, originPattern, siteOrigin } from '../extension/shared/sites.js';
+import { readViewerUrl, viewerUrl } from '../extension/shared/rotate.js';
+import { ACTIONS } from '../extension/shared/transform.js';
+import { copyFile, fitZoom, nextZoom } from '../extension/viewer/viewer-math.js';
 
-const locale = (name) => JSON.parse(readFileSync(new URL(`../_locales/${name}/messages.json`, import.meta.url)));
+const locale = (name) => JSON.parse(readFileSync(new URL(`../extension/_locales/${name}/messages.json`, import.meta.url)));
 const en = locale('en');
 const message = (name) => en[name]?.message ?? '';
 
@@ -44,8 +44,8 @@ describe('menu', () => {
   });
 
   test('every message used by the extension exists in English; British English only overrides', () => {
-    const sources = ['menu.js', 'viewer.js', 'viewer.html', 'options.html', 'options.js', 'manifest.json']
-      .map((file) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')).join('\n');
+    const sources = ['background/menu.js', 'viewer/viewer.js', 'viewer/viewer.html', 'options/options.html', 'options/options.js', 'manifest.json']
+      .map((file) => readFileSync(new URL(`../extension/${file}`, import.meta.url), 'utf8')).join('\n');
     const used = new Set([...sources.matchAll(/['"_]((?:menu|viewer|ext|options|command)[A-Z][A-Za-z0-9]+)/g)].map((m) => m[1])
       .filter((name) => !(name in DEFAULTS))); // Setting names, like menuStyle, aren't messages.
     expect(used.size).toBeGreaterThan(40);
@@ -56,7 +56,7 @@ describe('menu', () => {
 });
 
 describe('manifest', () => {
-  const manifest = JSON.parse(readFileSync(new URL('../manifest.json', import.meta.url)));
+  const manifest = JSON.parse(readFileSync(new URL('../extension/manifest.json', import.meta.url)));
 
   test('four shortcuts (Chrome allows at most four suggested keys), Alt+Shift+V opens the viewer', () => {
     const keys = Object.fromEntries(Object.entries(manifest.commands).map(([name, c]) => [name, c.suggested_key?.default]));
@@ -110,8 +110,8 @@ describe('single-key registration', () => {
 describe('viewer address', () => {
   test('round-trips the source, kind and state', () => {
     const media = { src: 'https://example.com/a b.jpg?x=1&y=2', kind: 'video', state: { r: 270, f: true } };
-    const url = viewerUrl('chrome-extension://id/viewer.html', media);
-    expect(url).toBe('chrome-extension://id/viewer.html?src=https%3A%2F%2Fexample.com%2Fa+b.jpg%3Fx%3D1%26y%3D2&type=video&r=270&f=1');
+    const url = viewerUrl('chrome-extension://id/viewer/viewer.html', media);
+    expect(url).toBe('chrome-extension://id/viewer/viewer.html?src=https%3A%2F%2Fexample.com%2Fa+b.jpg%3Fx%3D1%26y%3D2&type=video&r=270&f=1');
     expect(readViewerUrl(new URL(url).search)).toEqual(media);
   });
 

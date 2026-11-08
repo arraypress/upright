@@ -4,13 +4,13 @@
 
 Single source of truth for the Developer Dashboard. Update it in the same change as anything
 that alters the listing, permissions, data handling or version. Not shipped: `npm run package`
-zips (as `release/upright-<version>.zip`) only the files in `scripts/files.mjs`.
+zips (as `release/upright-<version>.zip`) only the contents of `extension/`.
 
 ## Store Listing
 
 **Extension Name** [REQUIRED] (32/75)
 Upright – Rotate Images & Videos
-<!-- From _locales/en/messages.json → extName; short_name (extShortName) is "Upright".
+<!-- From extension/_locales/en/messages.json → extName; short_name (extShortName) is "Upright".
      "Rotate Image" was taken on the store (gamfmnmdbilcooojmbjnjpdcfcgagmib). -->
 
 **Short Description** [REQUIRED] (from `extDescription`, 131/132)
@@ -55,7 +55,7 @@ English (also en_GB wording: "anti-clockwise").
 
 | Asset | Dimensions | Status | Filename |
 |-------|-----------|--------|----------|
-| Store Icon [REQUIRED] | 128×128 PNG | ✅ Ready | `icons/icon-128.png` (from `icons/icon.svg`) |
+| Store Icon [REQUIRED] | 128×128 PNG | ✅ Ready | `extension/icons/icon-128.png` (from `extension/icons/icon.svg`) |
 | Screenshot 1 [REQUIRED] | 1280×800 | ✅ Ready | `store/screenshot-1.png`: “Turn sideways photos upright, right on the page”, a post before and after Rotate image |
 | Screenshot 2 | 1280×800 | ✅ Ready | `store/screenshot-2.png`: “Hover and press ⌥⇧R (Alt+Shift+R)”, a gallery photo just turned by the shortcut |
 | Screenshot 3 | 1280×800 | ✅ Ready | `store/screenshot-3.png`: “Rotate, flip and zoom in the viewer”, the viewer (light) |
@@ -65,7 +65,7 @@ English (also en_GB wording: "anti-clockwise").
 | Marquee Promo Tile [OPTIONAL] | 1400×560 | ⬜ Not made | Only used if the store features the extension |
 
 **How they were made.** `node store/tools/make-screenshots.mjs` regenerates all six.
-- It runs `scripts/build-e2e.mjs` and loads that build in Playwright's Chromium (Playwright 1.64.0 from the Tabby repo). That build is the extension's own files plus the test hook.
+- It runs `scripts/build-e2e.mjs` and loads that build in Playwright's Chromium (Playwright 1.64.0 from the Tabby repo). That build is a copy of `extension/` plus the test hook.
 - Chrome's right-click menu and shortcuts can't be driven headlessly, so the script calls exactly what a click on “Rotate image” or a press of ⌥⇧R / ⌥⇧L / ⌥⇧V calls, with the real pointer hovering the photo.
 - Everything inside the windows is a real capture: the turned photos, the viewer and the settings page. The window frame, captions, labels, key caps and pointer are drawn.
 - Chrome's own image menu isn't drawn. Shot 1 names the item in a label instead.
@@ -81,12 +81,12 @@ English (also en_GB wording: "anti-clockwise").
 | `contextMenus` | Adds "Rotate image" / "Rotate video" (or the "Rotate" submenu, if chosen in settings) to the right-click menu of images and videos. |
 | `scripting` | Runs the code that finds the clicked or pointed-at image and sets its CSS rotation, only in the tab the user acted on. In single-key mode, also registers the key listener for the sites the user granted. |
 | `storage` | `chrome.storage.sync` keeps the user's settings (menu style, direction, extra keys and the “Never on” list), so Chrome Sync carries them to the user’s other computers through their own Google account, like Chrome’s own settings (signed out of Chrome, they stay on the computer). `chrome.storage.local` keeps single-key mode, where it runs and its chosen sites, which never sync because site access is granted on each computer; and, for the moment, any settings change Chrome Sync refused, until it’s retried; and whether Chrome was last seen in light or dark mode (`toolbarDark`, one true/false, this computer only, never synced), for the toolbar icon. Nothing is sent to the developer. Nothing else is stored. No install warning. |
-| `offscreen` | Keeps one small hidden page (`offscreen.html`, reason `MATCH_MEDIA`) that reads whether Chrome is in light or dark mode (`matchMedia('(prefers-color-scheme: dark)')`, which the service worker can’t call), so the toolbar icon matches Chrome’s own icons. It only reads that one true/false and tells the extension’s service worker when it changes; it loads nothing and sends nothing anywhere. No install warning. |
+| `offscreen` | Keeps one small hidden page (`offscreen/offscreen.html`, reason `MATCH_MEDIA`) that reads whether Chrome is in light or dark mode (`matchMedia('(prefers-color-scheme: dark)')`, which the service worker can’t call), so the toolbar icon matches Chrome’s own icons. It only reads that one true/false and tells the extension’s service worker when it changes; it loads nothing and sends nothing anywhere. No install warning. |
 | `action` (manifest key, not a permission) | The toolbar button opens the settings page. Its icon is a plain glyph in Chrome’s own toolbar icon colours, light or dark to match Chrome. |
 | `commands` (manifest key) | Keyboard shortcuts for the image under the pointer: rotate (Alt+Shift+R, L), reset (Alt+Shift+0) and open in the viewer (Alt+Shift+V), changeable at chrome://extensions/shortcuts. No install warning. |
 | Optional host permissions (`https://*/*`, `http://*/*`) | Asked for only when the user switches on single-key mode in settings, for all sites or the sites they list, from that click. Needed to listen for a single unmodified key (R, L, 0) on those pages, which Chrome's shortcuts can't do. The listener acts only when an image or video is under the pointer and the user isn't typing; it reads nothing else from the page. Switching the mode off gives the permissions back. |
 
-**Web accessible resources**: `keys.js` and the modules it imports, so the single-key content script can load the same code as the menu. They're code only and contain no data; a site can tell the extension is installed by requesting them.
+**Web accessible resources**: `content/keys.js` and the modules it imports (`shared/page.js`, `rotate.js`, `transform.js`, `settings.js`, `sites.js`), so the single-key content script can load the same code as the menu. They're code only and contain no data; a site can tell the extension is installed by requesting them.
 
 **Remote code**: No. Everything is in the package.
 
@@ -144,14 +144,14 @@ especially with optional host permissions. Host the text below, e.g. at
 - [ ] Decide the **support** contact (email or URL) and whether to add a homepage URL.
 
 **Build:**
-- [ ] `npm run package` (tests, then `release/upright-1.0.0.zip`; it refuses a test manifest). Check the zip holds only the files in `scripts/files.mjs`: `unzip -l release/upright-1.0.0.zip` lists 30 entries, with no `store/`, `test/`, `scripts/` or `.test-builds/`.
-- [ ] **No placeholder links.** `about-links.js` points at the GitHub repo (README, Issues, PRIVACY.md); `npm run package` warns loudly if any link is ever set back to example.com.
-- [ ] Load the folder in a clean profile. Check that right-click › Rotate image, ⌥⇧R / Alt+Shift+R, the viewer and switching single-key mode on (its permission prompt) all work.
+- [ ] `npm run package` (tests, then `release/upright-1.0.0.zip`; it refuses a test manifest). The zip is exactly the contents of `extension/`, less the icons' SVG sources (`test/package.test.js` checks this): `unzip -l release/upright-1.0.0.zip` lists 37 files, `manifest.json` at the root, then `_locales/` (2), `background/` (4), `content/` (2), `offscreen/` (2), `options/` (4), `viewer/` (4), `shared/` (8) and `icons/` (10 PNGs); no `store/`, `test/`, `scripts/` or `.test-builds/`.
+- [ ] **No placeholder links.** `extension/options/about-links.js` points at the GitHub repo (README, Issues, PRIVACY.md); `npm run package` warns loudly if any link is ever set back to example.com.
+- [ ] Load the `extension/` folder in a clean profile. Check that right-click › Rotate image, ⌥⇧R / Alt+Shift+R, the viewer and switching single-key mode on (its permission prompt) all work.
 
 **Developer Dashboard, in order:**
 1. **Items › New item**: upload `release/upright-1.0.0.zip`.
 2. **Store listing**: paste the detailed description and pick the category and language (English). Upload:
-   - store icon `icons/icon-128.png`;
+   - store icon `extension/icons/icon-128.png`;
    - screenshots `store/screenshot-1.png` … `-5.png`, in that order;
    - small promo tile `store/promo-440x280.png`.
 

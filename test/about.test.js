@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { ABOUT_LINKS, isPlaceholder } from '../about-links.js';
+import { ABOUT_LINKS, isPlaceholder } from '../extension/options/about-links.js';
 import { placeholderWarning } from '../scripts/warn-placeholder-links.mjs';
-import { FILES } from '../scripts/files.mjs';
 
 const script = fileURLToPath(new URL('../scripts/warn-placeholder-links.mjs', import.meta.url));
 
@@ -19,7 +18,8 @@ describe('about links', () => {
       reportIssue: 'https://github.com/arraypress/upright/issues',
       privacyPolicy: 'https://github.com/arraypress/upright/blob/main/PRIVACY.md',
     });
-    expect(FILES).toContain('about-links.js');
+    // Everything under extension/ ships (test/package.test.js).
+    expect(existsSync(new URL('../extension/options/about-links.js', import.meta.url))).toBe(true);
   });
 
   test('example.com (and its subdomains) is a placeholder; a real domain or mailto isn’t', () => {
@@ -51,8 +51,8 @@ describe('about links', () => {
   test('the package script prints the warning', () => {
     const source = readFileSync(new URL('../scripts/package.mjs', import.meta.url), 'utf8');
     expect(source).toMatch(/import \{ placeholderWarning, repositoryReminder \} from '\.\/warn-placeholder-links\.mjs'/);
-    expect(source).toMatch(/const warning = placeholderWarning\(\);\nif \(warning\) console\.warn/);
-    expect(source).toMatch(/const reminder = repositoryReminder\(\);\nif \(reminder\) console\.log/);
+    expect(source).toMatch(/const warning = placeholderWarning\(\);\n\s*if \(warning\) console\.warn/);
+    expect(source).toMatch(/const reminder = repositoryReminder\(\);\n\s*if \(reminder\) console\.log/);
   });
 });
 

@@ -3,7 +3,7 @@
  *
  *   node store/tools/make-screenshots.mjs
  *
- * Runs scripts/build-e2e.mjs and loads that build (the extension's own files plus the test hook
+ * Runs scripts/build-e2e.mjs and loads that build (a copy of extension/ plus the test hook
  * that exposes the menu-click and shortcut handlers, and access to http://127.0.0.1) in
  * Playwright's Chromium: Playwright 1.64.0 from the Tabby repo, launched the way Tabby's e2e tests
  * do. Chrome's native right-click menu and keyboard shortcuts can't be driven headlessly, so the
@@ -29,7 +29,7 @@ const store = path.dirname(tools);
 const root = path.dirname(store);
 const tmp = await mkdtemp(path.join(tmpdir(), 'upright-store-'));
 const dataUrl = async (file, type = 'image/png') => `data:${type};base64,${(await readFile(file)).toString('base64')}`;
-const EXT_ICON = await dataUrl(path.join(root, 'icons', 'icon-32.png'));
+const EXT_ICON = await dataUrl(path.join(root, 'extension', 'icons', 'icon-32.png'));
 
 execFileSync(process.execPath, [path.join(root, 'scripts', 'build-e2e.mjs')], { stdio: 'inherit' });
 const extensionPath = path.join(root, '.test-builds', 'e2e');
@@ -105,7 +105,7 @@ const context = await chromium.launchPersistentContext(path.join(tmp, 'profile')
 const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
 const extensionId = new URL(worker.url()).host;
 const tabFor = (url) => worker.evaluate(async (url) => (await chrome.tabs.query({ url }))[0], url);
-/** What a click on a menu item calls (the e2e hook exposes background.js's handler). */
+/** What a click on a menu item calls (the e2e hook exposes background/background.js's handler). */
 const menuClick = (menuItemId, srcUrl, tab, pageUrl) =>
   worker.evaluate(([menuItemId, srcUrl, tab, pageUrl]) => globalThis.rotateImageTest.click({ menuItemId, srcUrl, frameId: 0, mediaType: 'image', pageUrl }, tab), [menuItemId, srcUrl, tab, pageUrl]);
 /** What a keyboard shortcut calls. */
@@ -218,14 +218,14 @@ const galleryTabs = (activeViewer, viewerTitle) => [
 {
   const page = await context.newPage();
   await page.setViewportSize(ZOOMED.content);
-  await page.goto(`chrome-extension://${extensionId}/options.html`);
+  await page.goto(`chrome-extension://${extensionId}/options/options.html`);
   await ready(page);
   const shot = await shoot(page, 'options.png');
   shots.push(canvas({
     caption: 'One menu item, or the full menu',
     chrome: windowChrome({
       tabs: [{ title: 'Lighthouse walks: photos – Coastline', icon: SITE.icon }, { title: await page.title(), icon: EXT_ICON, active: true }],
-      url: `chrome-extension://${extensionId}/options.html`, w: ZOOMED.w,
+      url: `chrome-extension://${extensionId}/options/options.html`, w: ZOOMED.w,
     }),
     content: shot,
     geo: ZOOMED,
@@ -274,9 +274,9 @@ for (const [i, html] of shots.entries()) {
   console.log(`store/screenshot-${i + 1}.png`);
 }
 
-// Promo tile, 440×280: the icon drawn from icons/icon.svg, so it's sharp at any size.
+// Promo tile, 440×280: the icon drawn from extension/icons/icon.svg, so it's sharp at any size.
 {
-  const svg = await readFile(path.join(root, 'icons', 'icon.svg'), 'utf8');
+  const svg = await readFile(path.join(root, 'extension', 'icons', 'icon.svg'), 'utf8');
   await render.setViewportSize({ width: 440, height: 280 });
   const file = path.join(tmp, 'promo.html');
   await writeFile(file, `<!doctype html><meta charset="utf-8"><style>

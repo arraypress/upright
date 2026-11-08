@@ -1,12 +1,12 @@
 import { actionFor, menuItems, OPEN_ID } from './menu.js';
-import { mediaUnderPointer, readViewerUrl, rotateInPage, stateInPage, viewerUrl } from './rotate.js';
-import { syncRegistration } from './registration.js';
-import { changedSettings, DEFAULTS, loadSettings } from './settings.js';
+import { mediaUnderPointer, readViewerUrl, rotateInPage, stateInPage, viewerUrl } from '../shared/rotate.js';
+import { syncRegistration } from '../shared/registration.js';
+import { changedSettings, DEFAULTS, loadSettings } from '../shared/settings.js';
 import { moveSettingsToSync } from './migrate.js';
 import { createToolbarTheme, watchFromOffscreen } from './toolbar-theme.js';
 
 const message = (name) => chrome.i18n.getMessage(name);
-const VIEWER = chrome.runtime.getURL('viewer.html');
+const VIEWER = chrome.runtime.getURL('viewer/viewer.html');
 
 function create(props) {
   return new Promise((resolve) => {

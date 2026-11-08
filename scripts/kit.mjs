@@ -1,7 +1,8 @@
 /**
  * The options page's look comes from a shared design kit kept outside this repo
- * (../_chrome-ui), copied here as chrome-ui.css. When the kit is next door, stop if the copy is
- * out of date; in a standalone clone there's nothing to compare against, so say so and carry on.
+ * (../_chrome-ui), copied here as extension/shared/chrome-ui.css. When the kit is next door, stop if
+ * the copy is out of date; in a standalone clone there's nothing to compare against, so say so
+ * and carry on.
  */
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

@@ -62,7 +62,7 @@ export async function stateInPage(scripting, { tabId, frameId = 0, srcUrl }) {
   }
 }
 
-/** The viewer page's address: viewer.html?src=…&type=video&r=90&f=1. */
+/** The viewer page's address: viewer/viewer.html?src=…&type=video&r=90&f=1. */
 export function viewerUrl(base, { src, kind = 'image', state = IDENTITY_STATE }) {
   const params = new URLSearchParams({ src });
   if (kind === 'video') params.set('type', 'video');

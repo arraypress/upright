@@ -3,10 +3,10 @@
  * pixels to show them, so media from any site works; "Save rotated copy" needs the
  * pixels and is offered only when the site allows reading them (CORS).
  */
-import { readViewerUrl, viewerUrl } from './rotate.js';
-import { IDENTITY_STATE, step } from './transform.js';
+import { readViewerUrl, viewerUrl } from '../shared/rotate.js';
+import { IDENTITY_STATE, step } from '../shared/transform.js';
 import { copyFile, fitZoom, nextZoom, turnedSize } from './viewer-math.js';
-import { watchColorScheme } from './toolbar-scheme.js';
+import { watchColorScheme } from '../shared/toolbar-scheme.js';
 
 const message = (name) => chrome.i18n.getMessage(name);
 const $ = (id) => document.getElementById(id);

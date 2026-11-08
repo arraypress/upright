@@ -7,7 +7,7 @@ import { loadSettings } from './settings.js';
 import { neverPatterns, originPattern } from './sites.js';
 
 export const SCRIPT_ID = 'single-keys';
-export const SCRIPT_FILE = 'keys-loader.js';
+export const SCRIPT_FILE = 'content/keys-loader.js';
 export const ALL_SITES = Object.freeze(['https://*/*', 'http://*/*']);
 
 /**

@@ -17,7 +17,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import assert from 'node:assert/strict';
-import { toolbarIcon } from '../../toolbar-theme.js';
+import { toolbarIcon } from '../../extension/background/toolbar-theme.js';
 
 const root = path.join(path.dirname(path.dirname(path.dirname(fileURLToPath(import.meta.url)))), '.test-builds', 'e2e');
 const tmp = await mkdtemp(path.join(tmpdir(), 'upright-toolbar-'));
@@ -42,7 +42,7 @@ async function until(fn, what, timeout = 5000) {
  */
 async function offscreenEmulator(cdp) {
   const { targetInfos } = await cdp.send('Target.getTargets');
-  const target = targetInfos.find((info) => info.url.endsWith('/offscreen.html'));
+  const target = targetInfos.find((info) => info.url.endsWith('/offscreen/offscreen.html'));
   assert.ok(target, 'the offscreen document is a target');
   const { sessionId } = await cdp.send('Target.attachToTarget', { targetId: target.targetId, flatten: false });
   let id = 0;
@@ -63,7 +63,7 @@ try {
     return found.length && found;
   }, 'the offscreen document');
   assert.equal(offscreen.length, 1);
-  assert.equal(offscreen[0].documentUrl, `chrome-extension://${extensionId}/offscreen.html`);
+  assert.equal(offscreen[0].documentUrl, `chrome-extension://${extensionId}/offscreen/offscreen.html`);
   console.log('✔ the background keeps one offscreen document open, for MATCH_MEDIA');
 
   await worker.evaluate(() => {
@@ -92,7 +92,7 @@ try {
   {
     const page = await context.newPage();
     await page.emulateMedia({ colorScheme: 'light' });
-    await page.goto(`chrome-extension://${extensionId}/options.html`);
+    await page.goto(`chrome-extension://${extensionId}/options/options.html`);
     await page.waitForLoadState('load');
     await page.emulateMedia({ colorScheme: 'dark' });
     await until(async () => (await stored()) === true, 'the dark scheme stored');
@@ -103,7 +103,7 @@ try {
     // The viewer reports too.
     const viewer = await context.newPage();
     await viewer.emulateMedia({ colorScheme: 'dark' });
-    await viewer.goto(`chrome-extension://${extensionId}/viewer.html`);
+    await viewer.goto(`chrome-extension://${extensionId}/viewer/viewer.html`);
     await until(async () => (await stored()) === true, 'the viewer’s dark scheme stored');
     assert.deepEqual(await last(), toolbarIcon(true));
     await viewer.emulateMedia({ colorScheme: 'light' });
@@ -114,7 +114,7 @@ try {
     const before = (await calls()).length;
     const again = await context.newPage();
     await again.emulateMedia({ colorScheme: 'light' });
-    await again.goto(`chrome-extension://${extensionId}/options.html`);
+    await again.goto(`chrome-extension://${extensionId}/options/options.html`);
     await again.waitForLoadState('load');
     await again.waitForTimeout(300);
     assert.equal((await calls()).length, before);

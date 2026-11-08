@@ -1,8 +1,8 @@
 import { ABOUT_LINKS } from './about-links.js';
-import { ALL_SITES } from './registration.js';
-import { changedSettings, loadSettings, normalizeSettings, settingsSaver } from './settings.js';
-import { neverHost, originPattern, siteOrigin } from './sites.js';
-import { watchColorScheme } from './toolbar-scheme.js';
+import { ALL_SITES } from '../shared/registration.js';
+import { changedSettings, loadSettings, normalizeSettings, settingsSaver } from '../shared/settings.js';
+import { neverHost, originPattern, siteOrigin } from '../shared/sites.js';
+import { watchColorScheme } from '../shared/toolbar-scheme.js';
 
 const message = (name) => chrome.i18n.getMessage(name);
 const $ = (id) => document.getElementById(id);

@@ -2,9 +2,9 @@
  * Single-key mode, in the page: R, L and 0 (and H, V if switched on) turn the media
  * under the pointer. Loaded by keys-loader.js into the content script's isolated world.
  */
-import { applyPlacement, findMedia } from './page.js';
-import { updatesFor } from './rotate.js';
-import { changedSettings, loadSettings } from './settings.js';
+import { applyPlacement, findMedia } from '../shared/page.js';
+import { updatesFor } from '../shared/rotate.js';
+import { changedSettings, loadSettings } from '../shared/settings.js';
 
 const KEYS = { r: 'rotate-right', l: 'rotate-left', 0: 'reset' };
 const EXTRA_KEYS = { h: 'flip-horizontal', v: 'flip-vertical' };

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import {
   ACTIONS, IDENTITY_STATE, applyTo, fitScale, isIdentity, multiply, parseMatrix, parseRotate,
   parseScale, parseTranslate, placement, rotation, scaling, step, translation,
-} from '../transform.js';
+} from '../extension/shared/transform.js';
 
 const run = (...actions) => actions.reduce(step, IDENTITY_STATE);
 

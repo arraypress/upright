@@ -21,7 +21,7 @@
     }
   },
   "options_ui": {
-    "page": "options.html",
+    "page": "options/options.html",
     "open_in_tab": true
   },
   "permissions": [
@@ -66,18 +66,18 @@
     }
   },
   "background": {
-    "service_worker": "background.js",
+    "service_worker": "background/background.js",
     "type": "module"
   },
   "web_accessible_resources": [
     {
       "resources": [
-        "keys.js",
-        "page.js",
-        "rotate.js",
-        "transform.js",
-        "settings.js",
-        "sites.js"
+        "content/keys.js",
+        "shared/page.js",
+        "shared/rotate.js",
+        "shared/transform.js",
+        "shared/settings.js",
+        "shared/sites.js"
       ],
       "matches": [
         "https://*/*",

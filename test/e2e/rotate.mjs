@@ -17,8 +17,8 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import assert from 'node:assert/strict';
-import { LOCAL_KEYS } from '../../settings.js';
-import { ABOUT_LINKS } from '../../about-links.js';
+import { LOCAL_KEYS } from '../../extension/shared/settings.js';
+import { ABOUT_LINKS } from '../../extension/options/about-links.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.dirname(path.dirname(here));
@@ -419,7 +419,7 @@ try {
     const viewer = await opened;
     await viewer.waitForLoadState();
     const url = new URL(viewer.url());
-    assert.equal(url.pathname, '/viewer.html');
+    assert.equal(url.pathname, '/viewer/viewer.html');
     assert.equal(url.searchParams.get('src'), await srcOf('hover-a'));
     assert.equal(url.searchParams.get('r'), '90');
     await sleep(200);
@@ -577,7 +577,7 @@ try {
 
   await check('options: lists the shortcuts and shows every setting in English', async () => {
     const options = await context.newPage();
-    await options.goto(`chrome-extension://${extensionId}/options.html`);
+    await options.goto(`chrome-extension://${extensionId}/options/options.html`);
     await options.waitForFunction(() => document.getElementById('shortcuts').children.length);
     // Set shortcuts are listed; the way to change them is Chrome's own page, as a link row.
     assert.equal(await options.locator('#edit-shortcuts').innerText(), 'Keyboard shortcuts');
@@ -593,7 +593,7 @@ try {
     assert.equal(await options.locator('#syncSettings').count(), 0);
     assert.doesNotMatch(text, /Sync settings/);
     // About card, last, as chrome://settings/help: the version Chrome loaded and the configured links.
-    const { version } = JSON.parse(await readFile(path.join(root, 'manifest.json'), 'utf8'));
+    const { version } = JSON.parse(await readFile(path.join(root, 'extension', 'manifest.json'), 'utf8'));
     assert.equal(await options.locator('#version').innerText(), `Version ${version}`);
     assert.match(text, /About Upright\s+Upright\s+Version [\d.]+\s+Get help with Upright\s+Report an issue\s+Privacy policy\s*$/);
     assert.equal(await options.locator('#help').getAttribute('href'), ABOUT_LINKS.help);
@@ -615,7 +615,7 @@ try {
       chrome.storage.sync.onChanged.addListener(() => { globalThis.syncWrites++; });
     });
     const options = await context.newPage();
-    await options.goto(`chrome-extension://${extensionId}/options.html`);
+    await options.goto(`chrome-extension://${extensionId}/options/options.html`);
     await options.waitForFunction(() => document.getElementById('shortcuts').children.length);
     await options.locator('#singleDirection').selectOption('left'); // Only while the one item is chosen.
     for (const style of ['full', 'single', 'full', 'single', 'full']) {
@@ -637,7 +637,7 @@ try {
   await check('options: closing the page writes a change still waiting', async () => {
     await setSettings({ menuStyle: 'single', singleDirection: 'right' });
     const options = await context.newPage();
-    await options.goto(`chrome-extension://${extensionId}/options.html`);
+    await options.goto(`chrome-extension://${extensionId}/options/options.html`);
     await options.waitForFunction(() => document.getElementById('shortcuts').children.length);
     await options.locator('#singleDirection').selectOption('left');
     await options.close({ runBeforeUnload: true });

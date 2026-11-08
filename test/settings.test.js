@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import {
   DEFAULTS, LOCAL_KEYS, SYNCED_KEYS, UNSYNCED, changedSettings, loadSettings, retryUnsynced, saveSettings, settingsSaver,
-} from '../settings.js';
-import { OLD_SWITCH, OLD_SYNC_ITEM, moveSettingsToSync } from '../migrate.js';
+} from '../extension/shared/settings.js';
+import { OLD_SWITCH, OLD_SYNC_ITEM, moveSettingsToSync } from '../extension/background/migrate.js';
 import { fakeChromeStorage } from './fake-storage.js';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

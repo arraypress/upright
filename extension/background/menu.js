@@ -8,7 +8,7 @@
  * menu shows, so hiding it for untouched media would mean remembering which page URLs
  * were turned. On media that isn't turned, Reset does nothing.
  */
-import { DEFAULTS } from './settings.js';
+import { DEFAULTS } from '../shared/settings.js';
 
 export const PARENT_ID = 'rotate';
 export const OPEN_ID = 'open-in-new-tab';
