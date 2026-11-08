@@ -5,42 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Upright</title>
   <link rel="icon" href="../icons/icon-32.png">
-  <link rel="stylesheet" href="../shared/chrome-ui.css">
+  <link rel="stylesheet" href="../vendor/extension-kit/styles/chrome-ui.css">
   <link rel="stylesheet" href="viewer.css">
 </head>
 <body>
   <header class="viewer-bar" role="toolbar">
     <span id="name" class="name"></span>
     <div class="buttons">
-      <button type="button" class="icon-button" data-action="rotate-left" data-i18n-title="viewerRotateLeft">
+      <button type="button" class="icon-button" data-action="rotate-left" data-i18n-title="viewerRotateLeft" data-i18n-aria-label="viewerRotateLeft">
         <svg viewBox="0 0 24 24" class="mirror"><path d="M15.55 5.55 11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45zM19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zM13 17.9v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44c-.75.54-1.59.89-2.46 1.03zm3.89-2.42 1.42 1.41c.9-1.16 1.45-2.5 1.62-3.89h-2.02c-.14.87-.48 1.72-1.02 2.48z"/></svg>
       </button>
-      <button type="button" class="icon-button" data-action="rotate-right" data-i18n-title="viewerRotateRight">
+      <button type="button" class="icon-button" data-action="rotate-right" data-i18n-title="viewerRotateRight" data-i18n-aria-label="viewerRotateRight">
         <svg viewBox="0 0 24 24"><path d="M15.55 5.55 11 1v3.07C7.06 4.56 4 7.92 4 12s3.05 7.44 7 7.93v-2.02c-2.84-.48-5-2.94-5-5.91s2.16-5.43 5-5.91V10l4.55-4.45zM19.93 11c-.17-1.39-.72-2.73-1.62-3.89l-1.42 1.42c.54.75.88 1.6 1.02 2.47h2.02zM13 17.9v2.02c1.39-.17 2.74-.71 3.9-1.61l-1.44-1.44c-.75.54-1.59.89-2.46 1.03zm3.89-2.42 1.42 1.41c.9-1.16 1.45-2.5 1.62-3.89h-2.02c-.14.87-.48 1.72-1.02 2.48z"/></svg>
       </button>
-      <button type="button" class="icon-button" data-action="flip-horizontal" data-i18n-title="viewerFlipHorizontal">
+      <button type="button" class="icon-button" data-action="flip-horizontal" data-i18n-title="viewerFlipHorizontal" data-i18n-aria-label="viewerFlipHorizontal">
         <svg viewBox="0 0 24 24"><path d="M15 21h2v-2h-2v2zm4-12h2V7h-2v2zM3 5v14c0 1.1.9 2 2 2h4v-2H5V5h4V3H5c-1.1 0-2 .9-2 2zm16-2v2h2c0-1.1-.9-2-2-2zm-8 20h2V1h-2v22zm8-6h2v-2h-2v2zM15 5h2V3h-2v2zm4 8h2v-2h-2v2zm0 8c1.1 0 2-.9 2-2h-2v2z"/></svg>
       </button>
-      <button type="button" class="icon-button" data-action="flip-vertical" data-i18n-title="viewerFlipVertical">
+      <button type="button" class="icon-button" data-action="flip-vertical" data-i18n-title="viewerFlipVertical" data-i18n-aria-label="viewerFlipVertical">
         <svg viewBox="0 0 24 24" class="quarter"><path d="M15 21h2v-2h-2v2zm4-12h2V7h-2v2zM3 5v14c0 1.1.9 2 2 2h4v-2H5V5h4V3H5c-1.1 0-2 .9-2 2zm16-2v2h2c0-1.1-.9-2-2-2zm-8 20h2V1h-2v22zm8-6h2v-2h-2v2zM15 5h2V3h-2v2zm4 8h2v-2h-2v2zm0 8c1.1 0 2-.9 2-2h-2v2z"/></svg>
       </button>
       <span class="divider"></span>
-      <button type="button" class="icon-button" data-action="zoom-out" data-i18n-title="viewerZoomOut">
+      <button type="button" class="icon-button" data-action="zoom-out" data-i18n-title="viewerZoomOut" data-i18n-aria-label="viewerZoomOut">
         <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></svg>
       </button>
-      <button type="button" id="zoom" class="icon-button zoom" data-action="actual-size" data-i18n-title="viewerActualSize">100%</button>
-      <button type="button" class="icon-button" data-action="zoom-in" data-i18n-title="viewerZoomIn">
+      <button type="button" id="zoom" class="icon-button zoom" data-action="actual-size" data-i18n-title="viewerActualSize" data-i18n-aria-label="viewerActualSize">100%</button>
+      <button type="button" class="icon-button" data-action="zoom-in" data-i18n-title="viewerZoomIn" data-i18n-aria-label="viewerZoomIn">
         <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zm2.5-4h-2v2H9v-2H7V9h2V7h1v2h2v1z"/></svg>
       </button>
-      <button type="button" class="icon-button" data-action="fit" data-i18n-title="viewerFit">
+      <button type="button" class="icon-button" data-action="fit" data-i18n-title="viewerFit" data-i18n-aria-label="viewerFit">
         <svg viewBox="0 0 24 24"><path d="M15 3l2.3 2.3-2.89 2.87 1.42 1.42L18.7 6.7 21 9V3h-6zM3 9l2.3-2.3 2.87 2.89 1.42-1.42L6.7 5.3 9 3H3v6zm6 12-2.3-2.3 2.89-2.87-1.42-1.42L5.3 17.3 3 15v6h6zm12-6-2.3 2.3-2.87-2.89-1.42 1.42 2.89 2.87L15 21h6v-6z"/></svg>
       </button>
       <span class="divider"></span>
-      <button type="button" class="icon-button" data-action="reset" data-i18n-title="viewerReset">
+      <button type="button" class="icon-button" data-action="reset" data-i18n-title="viewerReset" data-i18n-aria-label="viewerReset">
         <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
       </button>
       <span class="save-wrap" id="save-wrap">
-        <button type="button" id="save" class="icon-button" data-action="save" data-i18n-title="viewerSave" disabled>
+        <button type="button" id="save" class="icon-button" data-action="save" data-i18n-title="viewerSave" data-i18n-aria-label="viewerSave" disabled>
           <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
         </button>
       </span>

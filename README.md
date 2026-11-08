@@ -74,22 +74,21 @@ upright/
 ├── extension/                  the extension: load this folder, zip its contents
 │   ├── manifest.json
 │   ├── _locales/               en and en_GB
-│   ├── background/             the service worker: background.js (menu, shortcuts), menu.js,
-│   │                           migrate.js, toolbar-theme.js
+│   ├── background/             the service worker: background.js (menu, shortcuts), menu.js
 │   ├── content/                single-key mode, in web pages: keys-loader.js, keys.js
 │   ├── offscreen/              offscreen.html/.js: tells the worker Chrome's light or dark mode
 │   ├── options/                the settings page: options.html/.css/.js, about-links.js
 │   ├── viewer/                 the full-window viewer: viewer.html/.css/.js, viewer-math.js
 │   ├── shared/                 loaded by more than one of those: transform.js (the maths),
 │   │                           page.js (run in the page), rotate.js, settings.js, sites.js,
-│   │                           registration.js, toolbar-scheme.js, chrome-ui.css (the shared
-│   │                           design kit's copy)
+│   │                           registration.js
+│   ├── vendor/extension-kit/   @arraypress/extension-kit's browser half, copied in by npm install
+│   │                           (not committed): chrome-ui.css, the settings store, the toolbar glyph
 │   └── icons/                  the extension icons (and icon.svg), and toolbar/ (the light and
 │                               dark glyph)
 ├── test/                       unit tests (vitest), and e2e/ (Playwright checks in real Chromium,
 │                               with their fixtures and the test build's hook)
-├── scripts/                    packaging, the e2e build, icon rendering, kit check, placeholder
-│                               warning
+├── scripts/                    packaging, the e2e build, icon rendering
 └── store/                      Chrome Web Store screenshots and promo tile, and tools/ that make them
 ```
 

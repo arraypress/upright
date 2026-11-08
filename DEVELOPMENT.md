@@ -22,10 +22,10 @@ The extension is `extension/`: load that folder, and `npm run package` zips exac
 - `shared/transform.js`: the maths (state, fit, composing with the page). Pure.
 - `shared/page.js`: the functions run in the page (find, measure, apply). Self-contained.
 - `shared/rotate.js`: the two round trips, and viewer URLs (the worker, the viewer and single-key mode). `background/menu.js`, `shared/sites.js`, `shared/registration.js` (the worker, and the options page's site list).
-- `shared/settings.js`: settings always live in Chrome Sync (`chrome.storage.sync`, one item each), like Chrome's own; plain preferences, and the developer receives nothing. Single-key mode, its scope and its sites stay in `chrome.storage.local`: they need site access, granted on each computer. A write sync refuses is kept in local and retried; the options page debounces its writes (sync allows 120 a minute).
-- `background/migrate.js`: moves older installs' settings (local, and the old opt-in switch's sync item) into sync; the background runs it on install and startup.
-- `options/about-links.js`: the About card's help, “Report an issue” and privacy links, all pointing into the GitHub repo (README, Issues, PRIVACY.md). `npm run package` reminds you the repo must be public before the store listing goes live, and warns loudly if a link is ever an example.com placeholder.
-- `background/toolbar-theme.js` + `shared/toolbar-scheme.js` + `offscreen/`: the toolbar button (opens settings) shows a light/dark glyph (`icons/toolbar/`, `node scripts/toolbar-icons.mjs`), swapped on reports from the options page, the viewer and an offscreen document kept open (reason MATCH_MEDIA, polling: offscreen pages get no `change` events); key `toolbarDark` in local, never synced. `setIcon` paths start with `/` (from the extension's root), as Chrome resolves them against the worker's address, which is `background/`.
+- `shared/settings.js`: the schema (defaults, normaliser, per-computer keys) for `@arraypress/extension-kit`'s settings store. Settings live in Chrome Sync (`chrome.storage.sync`, one item each), like Chrome's own; plain preferences, and the developer receives nothing. Single-key mode, its scope and its sites stay in `chrome.storage.local`: they need site access, granted on each computer. A write sync refuses is kept in local and retried (by the options page, and by the worker at start); the options page debounces its writes (sync allows 120 a minute). `keys.js` imports it, so it takes the kit's store module directly and both store files are web accessible.
+- `options/about-links.js`: the About card's help, “Report an issue” and privacy links (`githubAboutLinks`), all pointing into the GitHub repo (README, Issues, PRIVACY.md). `npm run package` reminds you the repo must be public before the store listing goes live, and warns loudly if a link is ever an example.com placeholder.
+- The toolbar glyph: the toolbar button (opens settings) shows a light/dark glyph (`icons/toolbar/`, `npm run toolbar-icons`). The kit does the work: `startToolbarTheme(chrome)` in the worker, `watchColorScheme(chrome)` on the options page and the viewer, `watchSchemeOffscreen` in `offscreen/` (kept open, reason MATCH_MEDIA, polling: offscreen pages get no `change` events); key `toolbarDark` in local, never synced.
+- `vendor/extension-kit/`: `@arraypress/extension-kit`'s browser half, copied in from `node_modules` by `npm install` (its `postinstall`) and never committed, so it can't drift from the version in `package.json`. Don't edit it; change the library.
 - `background/background.js`: wiring. `content/keys-loader.js` (the registered content script) + `content/keys.js`: single-key mode; `keys.js` and what it imports are `web_accessible_resources` so the content script can load them. `viewer/`, `options/`.
 
 ## Limits
@@ -38,22 +38,21 @@ The extension is `extension/`: load that folder, and `npm run package` zips exac
 - YouTube uses L and 0 itself while you point at its player: add youtube.com to "Never on" if that matters.
 
 ## Develop
+- `npm install` first: it also copies the kit into `extension/vendor/`.
 - `npm test`: unit tests (vitest).
 - `npm run test:e2e`: builds the hidden `.test-builds/e2e/` from `extension/` (adds a test hook, 127.0.0.1 access and webNavigation) and drives it in Playwright's Chromium. `ROTATE_SHOTS=dir` saves screenshots.
-- `npm run package`: tests, then `release/upright-<version>.zip` for the store. Refuses a test manifest; warns while `extension/options/about-links.js` has placeholders.
-- `node scripts/icons.mjs`: re-render `extension/icons/*.png` from `extension/icons/icon.svg`.
+- `npm run package`: tests, then `release/upright-<version>.zip` for the store (less SVG sources, `.d.ts` and `.DS_Store`). Refuses a test manifest; warns while `extension/options/about-links.js` has placeholders.
+- `npm run icons`: re-render `extension/icons/*.png` from `extension/icons/icon.svg`.
 - `node store/tools/make-screenshots.mjs`: re-make the store screenshots and promo tile in `store/` (not packaged; listing text in `CHROMEWEBSTORE.md`).
 
 ## Design
 - The options page copies chrome://settings; the viewer's bar uses the same tokens and icon buttons.
-- The look comes from the shared kit `../_chrome-ui/chrome-ui.css` (outside this repo), shipped here as
-  `extension/shared/chrome-ui.css`. Never edit the copy: edit the kit and run `node ../_chrome-ui/sync.mjs`. When the kit is
-  next door, `npm run package` and the e2e build fail while the copy is out of date; in a standalone clone
-  they skip that check. Class names: `../_chrome-ui/README.md`.
+- The look comes from `chrome-ui.css` in `@arraypress/extension-kit` (`extension/vendor/extension-kit/styles/`).
+  Class names are in the kit's README.
 - Never hand-roll styles for what the kit has (rows, cards, toggles, selects, buttons, link rows, menus,
   dialogs). `options/options.css` / `viewer/viewer.css` hold only what those pages add.
 - One card per section, titles above cards, help as a row's secondary text, Chrome pages as link rows.
-- The About card comes last and copies chrome://settings/help (Chromium's `settings/about_page`): logo and name, “Version …”, then “Get help with Upright”, “Report an issue”, “Privacy policy” as external link rows. Its two layout rules are in `options/options.css`, as the kit has no About row yet.
+- The About card comes last and copies chrome://settings/help (Chromium's `settings/about_page`): logo and name, “Version …”, then “Get help with Upright”, “Report an issue”, “Privacy policy” as external link rows (the kit's `.about-product` and `.product-title`).
 
 ## Wording (match Chrome's own menus)
 The same rules as Tabby's (`../tabby/CLAUDE.md`, "Wording") and More Tab Actions:

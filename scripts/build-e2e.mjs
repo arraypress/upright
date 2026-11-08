@@ -12,13 +12,10 @@
 import { cp, readFile, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { checkKitCopy } from './kit.mjs';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const extension = path.join(root, 'extension');
 
-// chrome-ui.css is the shared kit's copy (../_chrome-ui); stop if it's out of date.
-await checkKitCopy(path.join(extension, 'shared', 'chrome-ui.css'));
 // Hidden from Finder: load extension/ itself, not this.
 const out = path.join(root, '.test-builds', 'e2e');
 

@@ -12,12 +12,12 @@
  */
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import assert from 'node:assert/strict';
-import { LOCAL_KEYS } from '../../extension/shared/settings.js';
+import { checkRunner, launchExtension, until } from '@arraypress/extension-kit/testing';
+import { settingsStore } from '../../extension/shared/settings.js';
 import { ABOUT_LINKS } from '../../extension/options/about-links.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -103,47 +103,20 @@ const server = await listen();
 const origin = `http://127.0.0.1:${server.address().port}`;
 if (shots) await mkdir(shots, { recursive: true });
 
-const userDataDir = await mkdtemp(path.join(tmpdir(), 'upright-e2e-'));
-const context = await chromium.launchPersistentContext(userDataDir, {
-  channel: 'chromium',
-  viewport: { width: 1320, height: 860 },
-  args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`],
-});
+const launched = await launchExtension(chromium, extensionPath, { prefix: 'upright-e2e-', viewport: { width: 1320, height: 860 } });
+const { context } = launched;
 // The network edge: BBC's image CDN, answered with a local picture.
 const bbcImage = await fixture('photo-wide.png');
 await context.route('https://ichef.bbci.co.uk/**', (route) => route.fulfill({ contentType: 'image/png', body: bbcImage }));
 
-const failures = [];
-let passed = 0;
-
-async function check(name, fn) {
-  try {
-    await fn();
-    passed++;
-    console.log(`  ✓ ${name}`);
-  } catch (error) {
-    failures.push(name);
-    console.log(`  ✗ ${name}\n    ${error.message.split('\n').join('\n    ')}`);
-  }
-}
-
-async function until(fn, what, timeout = 5000) {
-  const end = Date.now() + timeout;
-  for (;;) {
-    const value = await fn();
-    if (value) return value;
-    if (Date.now() > end) throw new Error(`Timed out waiting for ${what}`);
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
-}
+const { check, finish } = checkRunner();
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const near = (actual, expected, what, tolerance = 1) =>
   assert.ok(Math.abs(actual - expected) <= tolerance, `${what}: ${actual} is not ≈ ${expected}`);
 
 try {
-  const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
-  const extensionId = new URL(worker.url()).host;
+  const { worker, extensionId } = launched;
   console.log(`Extension ${extensionId} loaded; site ${origin}\n`);
 
   const page = await context.newPage();
@@ -177,7 +150,7 @@ try {
     const [local, synced] = [{}, {}];
     for (const [key, value] of Object.entries(changes)) (localKeys.includes(key) ? local : synced)[key] = value;
     return Promise.all([chrome.storage.local.set(local), chrome.storage.sync.set(synced)]);
-  }, [changes, LOCAL_KEYS]);
+  }, [changes, settingsStore.localKeys]);
   const stored = () => worker.evaluate(async () => ({ sync: await chrome.storage.sync.get(null), local: await chrome.storage.local.get(null) }));
   /** Whether a menu item id exists right now. */
   const menuHas = (id) => worker.evaluate((id) => new Promise((resolve) => chrome.contextMenus.update(id, {}, () => resolve(!chrome.runtime.lastError))), id);
@@ -718,20 +691,15 @@ try {
     await setSettings({ singleKey: false });
     await until(async () => (await registered()).length === 0, 'the script to be unregistered');
     // Single-key mode, its scope and its sites stayed on this computer; nothing else is in local
-    // but the toolbar glyph's scheme (toolbar-theme.js), which is this computer's too.
+    // but the toolbar glyph's scheme, which is this computer's too.
     const { sync, local } = await stored();
-    for (const key of [...LOCAL_KEYS, 'toolbarDark']) assert.ok(!(key in sync), `${key} reached sync`);
-    assert.deepEqual(Object.keys(local).filter((key) => key !== 'toolbarDark').sort(), [...LOCAL_KEYS].sort());
+    for (const key of [...settingsStore.localKeys, 'toolbarDark']) assert.ok(!(key in sync), `${key} reached sync`);
+    assert.deepEqual(Object.keys(local).filter((key) => key !== 'toolbarDark').sort(), [...settingsStore.localKeys].sort());
     assert.deepEqual(sync.neverSites, ['127.0.0.1']);
   });
 } finally {
-  await context.close();
+  await launched.close();
   server.close();
-  await rm(userDataDir, { recursive: true, force: true });
 }
 
-console.log(`\n${passed} passed, ${failures.length} failed`);
-if (failures.length) {
-  for (const failure of failures) console.log(`  - ${failure}`);
-  process.exit(1);
-}
+finish();

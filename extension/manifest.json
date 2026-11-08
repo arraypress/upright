@@ -77,7 +77,9 @@
         "shared/rotate.js",
         "shared/transform.js",
         "shared/settings.js",
-        "shared/sites.js"
+        "shared/sites.js",
+        "vendor/extension-kit/settings/store.js",
+        "vendor/extension-kit/settings/storage.js"
       ],
       "matches": [
         "https://*/*",

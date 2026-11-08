@@ -6,18 +6,15 @@
 import { readViewerUrl, viewerUrl } from '../shared/rotate.js';
 import { IDENTITY_STATE, step } from '../shared/transform.js';
 import { copyFile, fitZoom, nextZoom, turnedSize } from './viewer-math.js';
-import { watchColorScheme } from '../shared/toolbar-scheme.js';
+import { localize, translator, watchColorScheme } from '../vendor/extension-kit/index.js';
 
-const message = (name) => chrome.i18n.getMessage(name);
+const message = translator(chrome.i18n);
 const $ = (id) => document.getElementById(id);
 
-// The toolbar glyph follows this page's light or dark scheme (toolbar-theme.js).
-watchColorScheme().catch((error) => console.debug('Reporting the colour scheme:', error));
+// The toolbar glyph follows this page's light or dark scheme.
+watchColorScheme(chrome).catch((error) => console.debug('Reporting the colour scheme:', error));
 
-for (const el of document.querySelectorAll('[data-i18n-title]')) {
-  el.title = message(el.dataset.i18nTitle);
-  el.setAttribute('aria-label', el.title);
-}
+localize(document, chrome.i18n);
 
 const { src, kind } = readViewerUrl(location.search);
 let { state } = readViewerUrl(location.search);

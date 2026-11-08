@@ -4,7 +4,7 @@
  */
 import { applyPlacement, findMedia } from '../shared/page.js';
 import { updatesFor } from '../shared/rotate.js';
-import { changedSettings, loadSettings } from '../shared/settings.js';
+import { settingsStore } from '../shared/settings.js';
 
 const KEYS = { r: 'rotate-right', l: 'rotate-left', 0: 'reset' };
 const EXTRA_KEYS = { h: 'flip-horizontal', v: 'flip-vertical' };
@@ -23,9 +23,9 @@ export function isTyping(target) {
     Boolean(target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]'));
 }
 
-let settings = await loadSettings(chrome.storage);
+let settings = await settingsStore.load(chrome.storage);
 chrome.storage.onChanged.addListener(async (changes, area) => {
-  if (changedSettings(changes, area).length) settings = await loadSettings(chrome.storage);
+  if (settingsStore.changed(changes, area).length) settings = await settingsStore.load(chrome.storage);
 });
 
 addEventListener('keydown', (event) => {

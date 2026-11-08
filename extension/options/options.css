@@ -1,8 +1,5 @@
-/* Upright settings: chrome-ui.css (the shared kit) does the look; only what
-   this page adds is here. Don't restyle kit components here. */
-
-.status { opacity: 0; transition: opacity 0.2s; }
-.status.show { opacity: 1; }
+/* Upright settings: chrome-ui.css (@arraypress/extension-kit) does the look, the About card and
+   the "Saved" indicator included; only what this page adds is here. */
 
 /* "With one item, a click" greys out while the full menu is chosen. */
 .row.off .label { opacity: 0.38; }
@@ -13,7 +10,3 @@
 kbd { font: inherit; }
 
 .add input { flex: 1; min-width: 0; }
-
-/* About card, as chrome://settings/help (about_page.css): a 32px logo 10px from a 20px title. */
-.about-product { justify-content: flex-start; gap: 10px; }
-.product-title { font-size: 20px; }

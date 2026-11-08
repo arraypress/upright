@@ -3,7 +3,7 @@
  * both chosen in settings and granted by the user. Checking both matters: a site can be
  * revoked from chrome://extensions without touching our settings. (Modelled on Tabby's.)
  */
-import { loadSettings } from './settings.js';
+import { settingsStore } from './settings.js';
 import { neverPatterns, originPattern } from './sites.js';
 
 export const SCRIPT_ID = 'single-keys';
@@ -38,7 +38,7 @@ export function syncRegistration() {
 }
 
 async function apply() {
-  const settings = await loadSettings(chrome.storage);
+  const settings = await settingsStore.load(chrome.storage);
   const { matches, excludeMatches } = await resolveMatches(settings, (origins) => chrome.permissions.contains({ origins }));
   const existing = await chrome.scripting.getRegisteredContentScripts({ ids: [SCRIPT_ID] });
   if (!matches.length) {

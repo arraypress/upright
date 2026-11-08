@@ -5,14 +5,28 @@
   "description": "Chrome extension: rotate and flip sideways images and videos in place, from the right-click menu.",
   "type": "module",
   "scripts": {
+    "postinstall": "extension-kit vendor extension/vendor/extension-kit",
     "test": "vitest run",
+    "lint": "eslint .",
+    "typecheck": "tsc -p .",
+    "duplication": "extension-kit duplication",
     "test:e2e": "node scripts/build-e2e.mjs && node test/e2e/rotate.mjs && node test/e2e/toolbar.mjs",
+    "icons": "node scripts/icons.mjs",
+    "toolbar-icons": "node scripts/toolbar-icons.mjs",
     "package": "npm test && node scripts/package.mjs"
   },
   "author": "ArrayPress Limited",
   "license": "MIT",
   "devDependencies": {
+    "@arraypress/extension-kit": "file:../../Core/extension-kit",
+    "@eslint/js": "^10.0.1",
+    "@types/chrome": "^0.3.7",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "jscpd": "^5.4.3",
     "playwright": "1.64.0",
+    "typescript": "^7.0.2",
     "vitest": "^5.0.2"
   }
 }

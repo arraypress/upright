@@ -1,9 +1,8 @@
 import { actionFor, menuItems, OPEN_ID } from './menu.js';
 import { mediaUnderPointer, readViewerUrl, rotateInPage, stateInPage, viewerUrl } from '../shared/rotate.js';
 import { syncRegistration } from '../shared/registration.js';
-import { changedSettings, DEFAULTS, loadSettings } from '../shared/settings.js';
-import { moveSettingsToSync } from './migrate.js';
-import { createToolbarTheme, watchFromOffscreen } from './toolbar-theme.js';
+import { DEFAULTS, settingsStore } from '../shared/settings.js';
+import { startToolbarTheme } from '../vendor/extension-kit/index.js';
 
 const message = (name) => chrome.i18n.getMessage(name);
 const VIEWER = chrome.runtime.getURL('viewer/viewer.html');
@@ -26,7 +25,7 @@ let rebuilding = Promise.resolve();
 export function buildMenu() {
   rebuilding = rebuilding
     .then(async () => {
-      const settings = await loadSettings(chrome.storage);
+      const settings = await settingsStore.load(chrome.storage);
       await chrome.contextMenus.removeAll();
       for (const item of menuItems(settings, message)) await create(item);
     })
@@ -46,7 +45,7 @@ function openViewer(tab, media) {
 /** What the menu does when clicked. Exported for the e2e build's test hook. */
 export async function handleMenuClick(info, tab) {
   if (!tab?.id || tab.id < 0 || !info.srcUrl) return;
-  const settings = await loadSettings(chrome.storage).catch(() => DEFAULTS);
+  const settings = await settingsStore.load(chrome.storage).catch(() => DEFAULTS);
   const action = actionFor(String(info.menuItemId), settings);
   if (!action) return;
   const kind = info.mediaType === 'video' ? 'video' : 'image';
@@ -112,17 +111,16 @@ const MENU_KEYS = ['menuStyle', 'singleDirection'];
 const resync = () => syncRegistration().catch((error) => console.error('Registering keys:', error));
 
 // Listeners are registered at top level so they attach every time the service worker wakes.
-// Settings live in Chrome Sync (settings.js); older installs' are moved there first, and
-// anything sync refused earlier is tried again.
+// Any settings change Chrome Sync refused earlier (kept on this computer) is tried again first.
 async function startUp() {
-  await moveSettingsToSync(chrome.storage).catch((error) => console.error('Moving settings to sync:', error));
+  await settingsStore.retryUnsynced(chrome.storage).catch((error) => console.error('Retrying settings sync:', error));
   await Promise.all([buildMenu(), resync()]);
 }
 chrome.runtime.onInstalled.addListener(startUp);
 chrome.runtime.onStartup.addListener(startUp);
 // Settings changed here, in another tab or on another computer (through Chrome Sync).
 chrome.storage.onChanged.addListener((changes, area) => {
-  const keys = changedSettings(changes, area);
+  const keys = settingsStore.changed(changes, area);
   if (keys.some((key) => MENU_KEYS.includes(key))) buildMenu();
   if (keys.some((key) => !MENU_KEYS.includes(key))) resync();
 });
@@ -139,13 +137,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 // Toolbar icon: open the settings page, as Upright has no popup.
 chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
 
-// The toolbar glyph follows light and dark mode (toolbar-theme.js). Every start: Chrome shows the
-// manifest's light glyph after a restart or re-enable, and closes the offscreen watcher on quit.
-const toolbarTheme = createToolbarTheme({ storage: chrome.storage.local, action: chrome.action, extensionId: chrome.runtime.id });
-toolbarTheme.restore();
-watchFromOffscreen({ offscreen: chrome.offscreen, runtime: chrome.runtime })
-  .catch((error) => console.error('Opening the colour scheme watcher:', error));
-chrome.runtime.onMessage.addListener((message, sender) => {
-  toolbarTheme.onMessage(message, sender);
-  return false;
-});
+// The toolbar glyph follows light and dark mode, reported by the options page, the viewer and an
+// offscreen watcher. Every start: Chrome shows the manifest's light glyph after a restart or
+// re-enable, and closes the offscreen watcher on quit.
+startToolbarTheme(chrome);
