@@ -105,10 +105,7 @@ const { server, origin } = await listenLocally(async (pathname, res) => {
 });
 if (shots) await mkdir(shots, { recursive: true });
 
-// Passed as a variable: @arraypress/extension-kit's launchExtension takes Playwright's context
-// options (viewport here) as its docs say, but its declared type lists only prefix and args.
-const launchOptions = { prefix: 'upright-e2e-', viewport: { width: 1320, height: 860 } };
-const launched = await launchExtension(chromium, extensionPath, launchOptions);
+const launched = await launchExtension(chromium, extensionPath, { prefix: 'upright-e2e-', viewport: { width: 1320, height: 860 } });
 const { context } = launched;
 // The network edge: BBC's image CDN, answered with a local picture.
 const bbcImage = await fixture('photo-wide.png');
