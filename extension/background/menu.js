@@ -7,15 +7,32 @@
  * "Reset" is always there in the full menu. Chrome tells an extension nothing before its
  * menu shows, so hiding it for untouched media would mean remembering which page URLs
  * were turned. On media that isn't turned, Reset does nothing.
+ *
+ * @module background/menu
  */
 import { DEFAULTS } from '../shared/settings.js';
 
+/** @import { Settings } from '../shared/settings.js' */
+
+/** The full menu's "Rotate" submenu. */
 export const PARENT_ID = 'rotate';
+
+/** "Open in new tab": opens the viewer rather than turning anything. */
 export const OPEN_ID = 'open-in-new-tab';
-export const SINGLE_IDS = Object.freeze({ image: 'rotate-image', video: 'rotate-video' });
+
+/** The one-item menu's ids: one item per context, so only one ever shows. */
+const SINGLE_IDS = /** @type {Readonly<Record<'image' | 'video', string>>} */ (
+  Object.freeze({ image: 'rotate-image', video: 'rotate-video' })
+);
+
+/** @type {[`${chrome.contextMenus.ContextType}`, ...`${chrome.contextMenus.ContextType}`[]]} */
 const CONTEXTS = ['image', 'video'];
 
-/** Full-menu items in order: [id, message name]. Ids other than OPEN_ID are actions in transform.js. */
+/**
+ * Full-menu items in order: [id, message name]. Ids other than OPEN_ID are actions in transform.js.
+ *
+ * @type {readonly [string, string | null][]}
+ */
 const FULL = [
   ['rotate-right', 'menuRotateRight'],
   ['rotate-left', 'menuRotateLeft'],
@@ -28,7 +45,13 @@ const FULL = [
   [OPEN_ID, 'menuOpenInNewTab'],
 ];
 
-/** chrome.contextMenus.create properties for every item. `message(name)` is chrome.i18n.getMessage. */
+/**
+ * chrome.contextMenus.create properties for every item, in order.
+ *
+ * @param {Settings | undefined} settings - Current settings (default the defaults).
+ * @param {(name: string) => string} message - chrome.i18n.getMessage.
+ * @returns {chrome.contextMenus.CreateProperties[]} The items, parents first.
+ */
 export function menuItems(settings = DEFAULTS, message) {
   if (settings.menuStyle !== 'full') {
     // Two items, but only one ever matches what was right-clicked, so Chrome shows it
@@ -44,12 +67,20 @@ export function menuItems(settings = DEFAULTS, message) {
       id,
       parentId: PARENT_ID,
       contexts: CONTEXTS,
-      ...(name ? { title: message(name) } : { type: 'separator' }),
+      ...(name ? { title: message(name) } : { type: /** @type {const} */ ('separator') }),
     })),
   ];
 }
 
-/** What a click on menu item `id` does: an action from transform.js, OPEN_ID, or null. */
+/**
+ * What a click on menu item `id` does.
+ *
+ * @param {string} id - The clicked item's id.
+ * @param {Settings} [settings] - Current settings (default the defaults): the one item's direction.
+ * @returns {string | null} An action from transform.js, OPEN_ID, or null for anything else.
+ * @example
+ * actionFor('rotate-image', normalizeSettings({ singleDirection: 'left' })); // 'rotate-left'
+ */
 export function actionFor(id, settings = DEFAULTS) {
   if (Object.values(SINGLE_IDS).includes(id)) {
     return settings.singleDirection === 'left' ? 'rotate-left' : 'rotate-right';

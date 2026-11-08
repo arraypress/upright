@@ -1,12 +1,32 @@
+/**
+ * The service worker: builds the right-click menu, answers its clicks and the keyboard
+ * shortcuts, keeps single-key mode's content script registered, and starts the toolbar
+ * glyph's light/dark theme.
+ *
+ * @module background/background
+ */
 import { actionFor, menuItems, OPEN_ID } from './menu.js';
 import { mediaUnderPointer, readViewerUrl, rotateInPage, stateInPage, viewerUrl } from '../shared/rotate.js';
 import { syncRegistration } from '../shared/registration.js';
 import { DEFAULTS, settingsStore } from '../shared/settings.js';
 import { startToolbarTheme } from '../vendor/extension-kit/index.js';
 
+/** @import { ViewerMedia } from '../shared/rotate.js' */
+
+/**
+ * @param {string} name - A message in _locales.
+ * @returns {string} It, in the browser's language.
+ */
 const message = (name) => chrome.i18n.getMessage(name);
 const VIEWER = chrome.runtime.getURL('viewer/viewer.html');
 
+/**
+ * Create one menu item. chrome.contextMenus.create has no promise form, so this wraps
+ * its callback; a failure is logged, not thrown, so one bad item can't stop the rest.
+ *
+ * @param {chrome.contextMenus.CreateProperties} props - The item.
+ * @returns {Promise<void>} Resolves once Chrome has made it (or refused).
+ */
 function create(props) {
   return new Promise((resolve) => {
     chrome.contextMenus.create(props, () => {
@@ -16,13 +36,17 @@ function create(props) {
   });
 }
 
+/** The last menu rebuild, so the next waits for it. */
+let rebuilding = Promise.resolve();
+
 /**
  * Rebuild the menu for the current settings. Rebuilds are queued, so a quick run of
  * setting changes can't interleave one rebuild's creates with another's removeAll
  * (which is how duplicate ids would happen).
+ *
+ * @returns {Promise<void>} Settles once this rebuild is done; errors are logged.
  */
-let rebuilding = Promise.resolve();
-export function buildMenu() {
+function buildMenu() {
   rebuilding = rebuilding
     .then(async () => {
       const settings = await settingsStore.load(chrome.storage);
@@ -33,6 +57,13 @@ export function buildMenu() {
   return rebuilding;
 }
 
+/**
+ * Open the viewer in a new tab just after `tab`.
+ *
+ * @param {chrome.tabs.Tab} tab - The tab the media is in.
+ * @param {ViewerMedia} media - What to show.
+ * @returns {Promise<chrome.tabs.Tab>} The new tab.
+ */
 function openViewer(tab, media) {
   return chrome.tabs.create({
     url: viewerUrl(VIEWER, media),
@@ -42,7 +73,13 @@ function openViewer(tab, media) {
   });
 }
 
-/** What the menu does when clicked. Exported for the e2e build's test hook. */
+/**
+ * What the menu does when clicked. Exported for the e2e build's test hook.
+ *
+ * @param {chrome.contextMenus.OnClickData} info - What Chrome says was clicked.
+ * @param {chrome.tabs.Tab} [tab] - The tab it was clicked in.
+ * @returns {Promise<void>}
+ */
 export async function handleMenuClick(info, tab) {
   if (!tab?.id || tab.id < 0 || !info.srcUrl) return;
   const settings = await settingsStore.load(chrome.storage).catch(() => DEFAULTS);
@@ -74,16 +111,21 @@ export async function handleMenuClick(info, tab) {
     if (!found) console.debug('Upright: no element shows', info.srcUrl);
   } catch (error) {
     // Expected for frames from another site: activeTab covers the tab's own site only.
-    console.debug('Upright: can\'t reach that frame:', error.message);
+    console.debug('Upright: can\'t reach that frame:', error instanceof Error ? error.message : error);
   }
 }
 
-export const COMMANDS = ['rotate-right', 'rotate-left', 'reset', 'open-viewer'];
+/** The manifest's commands. */
+const COMMANDS = ['rotate-right', 'rotate-left', 'reset', 'open-viewer'];
 
 /**
  * A keyboard shortcut, for the media under the pointer in the active tab: turn it, or
  * open it in the viewer at its current turn. Pressing it grants activeTab, so no host
  * permission is needed. Exported for the e2e test hook.
+ *
+ * @param {string} command - The command's name in the manifest.
+ * @param {chrome.tabs.Tab} [tab] - The active tab, if Chrome passed it.
+ * @returns {Promise<void>}
  */
 export async function handleCommand(command, tab) {
   if (!COMMANDS.includes(command)) return;
@@ -106,16 +148,28 @@ export async function handleCommand(command, tab) {
   }
 }
 
+/** Settings that change the menu; the rest change single-key mode's registration. */
 const MENU_KEYS = ['menuStyle', 'singleDirection'];
 
+/**
+ * Bring single-key mode's registration up to date, logging (not throwing) a failure.
+ *
+ * @returns {Promise<void>}
+ */
 const resync = () => syncRegistration().catch((error) => console.error('Registering keys:', error));
 
-// Listeners are registered at top level so they attach every time the service worker wakes.
-// Any settings change Chrome Sync refused earlier (kept on this computer) is tried again first.
+/**
+ * On install, update and browser start: retry any settings change Chrome Sync refused
+ * earlier (kept on this computer), then build the menu and the registration.
+ *
+ * @returns {Promise<void>}
+ */
 async function startUp() {
   await settingsStore.retryUnsynced(chrome.storage).catch((error) => console.error('Retrying settings sync:', error));
   await Promise.all([buildMenu(), resync()]);
 }
+
+// Listeners are registered at top level so they attach every time the service worker wakes.
 chrome.runtime.onInstalled.addListener(startUp);
 chrome.runtime.onStartup.addListener(startUp);
 // Settings changed here, in another tab or on another computer (through Chrome Sync).

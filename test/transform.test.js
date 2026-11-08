@@ -1,12 +1,40 @@
+/**
+ * The rotation maths: states build up like clicks on screen, sideways turns fit their box,
+ * and the inline styles compose with whatever the page already does.
+ *
+ * @module test/transform
+ */
 import { describe, expect, test } from 'vitest';
 import {
   ACTIONS, IDENTITY_STATE, applyTo, fitScale, isIdentity, multiply, parseMatrix, parseRotate,
   parseScale, parseTranslate, placement, rotation, scaling, step, translation,
 } from '../extension/shared/transform.js';
 
+/** @import { Box, Matrix, PageTransforms, Point, State, Styles } from '../extension/shared/transform.js' */
+
+/**
+ * @param {...string} actions - Clicks, in order.
+ * @returns {State} The state after them all, from upright.
+ */
 const run = (...actions) => actions.reduce(step, IDENTITY_STATE);
 
-/** The on-screen matrix each action applies, written out independently of step(). */
+/**
+ * Fail the test on null; otherwise the value, typed without null.
+ *
+ * @template T
+ * @param {T | null} value - A parser's or placement()'s result.
+ * @returns {T} The same value.
+ */
+const must = (value) => {
+  expect(value).not.toBeNull();
+  return /** @type {T} */ (value);
+};
+
+/**
+ * The on-screen matrix each action applies, written out independently of step().
+ *
+ * @type {Record<string, Matrix>}
+ */
 const SCREEN = {
   'rotate-right': [0, 1, -1, 0, 0, 0],
   'rotate-left': [0, -1, 1, 0, 0, 0],
@@ -14,18 +42,36 @@ const SCREEN = {
   'flip-horizontal': [-1, 0, 0, 1, 0, 0],
   'flip-vertical': [1, 0, 0, -1, 0, 0],
 };
+/**
+ * @param {State} state - A state.
+ * @returns {Matrix} The matrix it draws.
+ */
 const stateMatrix = ({ r, f }) => multiply(rotation(r), scaling(f ? -1 : 1, 1));
 
-/** What CSS draws for translate · rotate · scale · transform, about the origin. */
+/**
+ * What CSS draws for translate · rotate · scale · transform, about the origin.
+ *
+ * @param {PageTransforms} styles - The individual properties.
+ * @param {string | undefined} transform - The `transform` property.
+ * @param {number} width - The box's width.
+ * @param {number} height - The box's height.
+ * @returns {Matrix} All of it as one matrix.
+ */
 const drawn = (styles, transform, width, height) =>
   [
-    translation(...parseTranslate(styles.translate, width, height)),
-    rotation(parseRotate(styles.rotate)),
-    scaling(...parseScale(styles.scale)),
-    parseMatrix(transform),
+    translation(...must(parseTranslate(styles.translate, width, height))),
+    rotation(must(parseRotate(styles.rotate))),
+    scaling(...must(parseScale(styles.scale))),
+    must(parseMatrix(transform)),
   ].reduce(multiply);
 
-/** Output is rounded (px to 0.001, degrees to 0.0001), so composed checks allow 0.005 px. */
+/**
+ * Output is rounded (px to 0.001, degrees to 0.0001), so composed checks allow 0.005 px.
+ *
+ * @param {readonly number[]} actual - Measured.
+ * @param {readonly number[]} expected - Wanted, element by element.
+ * @param {number} [digits] - toBeCloseTo's precision. Default 6.
+ */
 const close = (actual, expected, digits = 6) => actual.forEach((v, i) => expect(v).toBeCloseTo(expected[i], digits));
 
 describe('step: turns accumulate', () => {
@@ -60,13 +106,17 @@ describe('step: flips combine with rotation', () => {
   test('every sequence of clicks matches doing them one after another on screen', () => {
     // Every sequence of up to four actions.
     const actions = ACTIONS.filter((a) => a !== 'reset');
+    /** @type {string[][]} */
     let sequences = [[]];
     for (let length = 0; length < 4; length++) {
       sequences = sequences.flatMap((seq) => [seq, ...actions.map((a) => [...seq, a])]);
     }
-    for (const seq of new Set(sequences.map(JSON.stringify))) {
+    for (const seq of new Set(sequences.map((sequence) => JSON.stringify(sequence)))) {
+      /** @type {string[]} */
       const clicks = JSON.parse(seq);
-      const expected = clicks.reduce((m, a) => multiply(SCREEN[a], m), [1, 0, 0, 1, 0, 0]);
+      /** @type {Matrix} */
+      const identity = [1, 0, 0, 1, 0, 0];
+      const expected = clicks.reduce((m, a) => multiply(SCREEN[a], m), identity);
       close(stateMatrix(run(...clicks)), expected);
     }
   });
@@ -90,11 +140,13 @@ describe('fit scaling', () => {
   });
 
   test('the turned media sits inside its box, centred', () => {
-    const styles = placement({ r: 90, f: false }, { width: 200, height: 100, origin: [100, 50] });
+    const styles = must(placement({ r: 90, f: false }, { width: 200, height: 100, origin: [100, 50] }));
     expect(styles).toEqual({ translate: '0px 0px', rotate: '90deg', scale: '0.5 0.5' });
     const m = drawn(styles, 'none', 200, 100);
     // Corners relative to the centre origin land within ±100 × ±50, touching top and bottom.
-    const corners = [[-100, -50], [100, -50], [100, 50], [-100, 50]].map((p) => applyTo(m, p));
+    /** @type {Point[]} */
+    const box = [[-100, -50], [100, -50], [100, 50], [-100, 50]];
+    const corners = box.map((p) => applyTo(m, p));
     expect(Math.max(...corners.map(([x]) => Math.abs(x)))).toBeCloseTo(25);
     expect(Math.max(...corners.map(([, y]) => Math.abs(y)))).toBeCloseTo(50);
   });
@@ -106,12 +158,12 @@ describe('placement', () => {
   });
 
   test('a mirror is a negative x scale', () => {
-    expect(placement({ r: 0, f: true }, { width: 200, height: 100 }).scale).toBe('-1 1');
-    expect(placement({ r: 90, f: true }, { width: 200, height: 100 }).scale).toBe('-0.5 0.5');
+    expect(must(placement({ r: 0, f: true }, { width: 200, height: 100 })).scale).toBe('-1 1');
+    expect(must(placement({ r: 90, f: true }, { width: 200, height: 100 })).scale).toBe('-0.5 0.5');
   });
 
   test('with the origin at the top left, it still turns about the centre', () => {
-    const styles = placement({ r: 90, f: false }, { width: 200, height: 100, origin: [0, 0] });
+    const styles = must(placement({ r: 90, f: false }, { width: 200, height: 100, origin: [0, 0] }));
     expect(styles.translate).toBe('125px 0px');
     // The centre (100, 50) from the origin stays put.
     close(applyTo(drawn(styles, 'none', 200, 100), [100, 50]), [100, 50]);
@@ -119,21 +171,24 @@ describe('placement', () => {
 });
 
 describe('composing with the page\'s own transform', () => {
-  /** Checks the two things that matter: the centre stays put, and the turn is on screen. */
+  /**
+   * Checks the two things that matter: the centre stays put, and the turn is on screen.
+   *
+   * @param {State} state - The turn.
+   * @param {Required<Pick<Box, 'width' | 'height' | 'origin' | 'transform'>> & Box} box - A fully measured box.
+   * @returns {Styles} What placement() gave.
+   */
   function expectComposed(state, box) {
-    const styles = placement(state, box);
-    const { width, height, origin, transform, page } = box;
-    const pageAll = [
-      translation(...parseTranslate(page?.translate, width, height)),
-      rotation(parseRotate(page?.rotate)),
-      scaling(...parseScale(page?.scale)),
-      parseMatrix(transform),
-    ].reduce(multiply);
+    const styles = must(placement(state, box));
+    const { width, height, origin, transform, page = {} } = box;
+    const pageAll = drawn(page, transform, width, height);
     const after = drawn(styles, transform, width, height);
+    /** @type {Point} */
     const centre = [width / 2 - origin[0], height / 2 - origin[1]];
     close(applyTo(after, centre), applyTo(pageAll, centre), 2);
     const s = fitScale(state, width, height, pageAll);
-    const linear = multiply(multiply(stateMatrix(state), scaling(s)), [...pageAll.slice(0, 4), 0, 0]);
+    const [a, b, c, d] = pageAll;
+    const linear = multiply(multiply(stateMatrix(state), scaling(s)), [a, b, c, d, 0, 0]);
     close(after.slice(0, 4), linear.slice(0, 4), 4);
     return styles;
   }

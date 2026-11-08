@@ -8,6 +8,8 @@
  * - webNavigation, so the test can look up frame ids as Chrome's menu would pass them.
  *
  * scripts/package.mjs refuses a manifest with host_permissions.
+ *
+ * @module scripts/build-e2e
  */
 import { cp, readFile, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';

@@ -39,7 +39,7 @@ The extension is `extension/`: load that folder, and `npm run package` zips exac
 
 ## Develop
 - `npm install` first: it also copies the kit into `extension/vendor/`.
-- `npm test`: unit tests (vitest).
+- `npm test`: lints (ESLint), type-checks the JSDoc-typed JavaScript (`tsc`, strict; nothing is emitted), runs the unit tests (vitest) and checks for copied code (`extension-kit duplication`: move shared code into a function, or list a deliberate copy in `.jscpd-allowlist.json` with a reason). Each on its own: `npm run lint`, `npm run typecheck`, `npm run duplication`.
 - `npm run test:e2e`: builds the hidden `.test-builds/e2e/` from `extension/` (adds a test hook, 127.0.0.1 access and webNavigation) and drives it in Playwright's Chromium. `ROTATE_SHOTS=dir` saves screenshots.
 - `npm run package`: tests, then `release/upright-<version>.zip` for the store (less SVG sources, `.d.ts` and `.DS_Store`). Refuses a test manifest; warns while `extension/options/about-links.js` has placeholders.
 - `npm run icons`: re-render `extension/icons/*.png` from `extension/icons/icon.svg`.

@@ -2,21 +2,35 @@
  * Keeps single-key mode's content script registered for exactly the sites that are
  * both chosen in settings and granted by the user. Checking both matters: a site can be
  * revoked from chrome://extensions without touching our settings. (Modelled on Tabby's.)
+ *
+ * @module shared/registration
  */
 import { settingsStore } from './settings.js';
 import { neverPatterns, originPattern } from './sites.js';
 
-export const SCRIPT_ID = 'single-keys';
+/** @import { Settings } from './settings.js' */
+
+/** The registered content script's id. */
+const SCRIPT_ID = 'single-keys';
+
+/** The registered content script, from the extension's root. */
 export const SCRIPT_FILE = 'content/keys-loader.js';
-export const ALL_SITES = Object.freeze(['https://*/*', 'http://*/*']);
+
+/** The host patterns for "All sites". */
+export const ALL_SITES = /** @type {readonly string[]} */ (Object.freeze(['https://*/*', 'http://*/*']));
 
 /**
- * The patterns to register for. `isGranted(patterns)` resolves whether all are held.
- * `matches` is empty when nothing should run.
+ * The patterns to register for.
+ *
+ * @param {Settings} settings - Current settings.
+ * @param {(patterns: string[]) => Promise<boolean>} isGranted - Resolves whether all of `patterns` are held
+ *   (chrome.permissions.contains, or a fake in tests).
+ * @returns {Promise<{ matches: string[], excludeMatches: string[] }>} `matches` is empty when nothing should run.
  */
 export async function resolveMatches(settings, isGranted) {
   if (!settings.singleKey) return { matches: [], excludeMatches: [] };
   const excludeMatches = settings.neverSites.flatMap(neverPatterns);
+  /** @type {string[]} */
   const matches = [];
   if (settings.singleKeyScope === 'all') {
     if (await isGranted([...ALL_SITES])) matches.push(...ALL_SITES);
@@ -29,14 +43,27 @@ export async function resolveMatches(settings, isGranted) {
   return { matches, excludeMatches: matches.length ? excludeMatches : [] };
 }
 
-/** Bring the registration in line with settings and permissions. Calls are serialised. */
+/** The last registration change, so the next waits for it. */
 let queue = Promise.resolve();
+
+/**
+ * Bring the registration in line with settings and permissions. Calls are serialised,
+ * so a quick run of changes can't register and unregister out of order.
+ *
+ * @returns {Promise<void>} Settles once this call's change is made.
+ * @throws {Error} If Chrome refuses the change.
+ */
 export function syncRegistration() {
   const run = queue.then(apply, apply);
   queue = run.catch(() => {});
   return run;
 }
 
+/**
+ * Register, update or unregister the content script to match settings and permissions.
+ *
+ * @returns {Promise<void>}
+ */
 async function apply() {
   const settings = await settingsStore.load(chrome.storage);
   const { matches, excludeMatches } = await resolveMatches(settings, (origins) => chrome.permissions.contains({ origins }));
@@ -45,6 +72,7 @@ async function apply() {
     if (existing.length) await chrome.scripting.unregisterContentScripts({ ids: [SCRIPT_ID] });
     return;
   }
+  /** @type {chrome.scripting.RegisteredContentScript} */
   const script = {
     id: SCRIPT_ID,
     js: [SCRIPT_FILE],

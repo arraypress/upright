@@ -52,8 +52,8 @@ Needs Chrome 120 or later.
 ## Development
 
 ```sh
-npm install          # vitest and Playwright
-npm test             # unit tests
+npm install          # vitest, Playwright, ESLint and TypeScript
+npm test             # lint, type-check, unit tests, and a check for copied code
 npm run test:e2e     # browser tests in Playwright's Chromium
 npm run package      # tests, then release/upright-<version>.zip for the Chrome Web Store
 ```
@@ -71,6 +71,7 @@ The extension is the `extension/` folder: it's what you load in Chrome, and exac
 upright/
 ├── README.md  LICENSE  PRIVACY.md  CHANGELOG.md  CHROMEWEBSTORE.md  DEVELOPMENT.md
 ├── package.json  package-lock.json  .gitignore
+├── tsconfig.json  eslint.config.js  .jscpd.json   type-checking, lint and copied-code settings
 ├── extension/                  the extension: load this folder, zip its contents
 │   ├── manifest.json
 │   ├── _locales/               en and en_GB
@@ -87,8 +88,8 @@ upright/
 │   └── icons/                  the extension icons (and icon.svg), and toolbar/ (the light and
 │                               dark glyph)
 ├── test/                       unit tests (vitest), and e2e/ (Playwright checks in real Chromium,
-│                               with their fixtures and the test build's hook)
-├── scripts/                    packaging, the e2e build, icon rendering
+│                               with their fixtures and the test build's hook and its client)
+├── scripts/                    packaging, the e2e build, icon rendering, the local test server
 └── store/                      Chrome Web Store screenshots and promo tile, and tools/ that make them
 ```
 

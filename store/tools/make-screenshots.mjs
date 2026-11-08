@@ -13,21 +13,32 @@
  *
  * Pages are made up (no real sites) and served from 127.0.0.1; the address bar shows a made-up
  * name. Photos are CC0 from Wikimedia Commons, saved sideways here (photos/).
+ *
+ * @module store/tools/make-screenshots
  */
 import { chromium } from 'playwright';
 import { execFileSync } from 'node:child_process';
-import { createServer } from 'node:http';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { H, THEMES, W, WIN, canvas, cursor, geometry, letterIcon, windowChrome } from './frame.mjs';
+import { listenLocally } from '../../scripts/local-server.mjs';
+import { testHook } from '../../test/e2e/hook-client.mjs';
+
+/** @import { Page } from 'playwright' */
+/** @import { Tab } from './frame.mjs' */
 
 const ZOOMED = geometry(1.2);
 const tools = path.dirname(fileURLToPath(import.meta.url));
 const store = path.dirname(tools);
 const root = path.dirname(store);
 const tmp = await mkdtemp(path.join(tmpdir(), 'upright-store-'));
+/**
+ * @param {string} file - A local file.
+ * @param {string} [type] - Its media type. Default PNG.
+ * @returns {Promise<string>} It as a data: URL.
+ */
 const dataUrl = async (file, type = 'image/png') => `data:${type};base64,${(await readFile(file)).toString('base64')}`;
 const EXT_ICON = await dataUrl(path.join(root, 'extension', 'icons', 'icon-32.png'));
 
@@ -79,8 +90,7 @@ const GALLERY = `<!doctype html><html><head><meta charset="utf-8"><title>Lightho
   <figure><img id="bierstadt" src="/photos/bierstadt.jpg" width="301" height="200" alt=""></figure>
 </div></body></html>`;
 
-const server = createServer(async (req, res) => {
-  const { pathname } = new URL(req.url, 'http://x');
+const { server, origin } = await listenLocally(async (pathname, res) => {
   if (pathname === '/post') return res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end(POST);
   if (pathname === '/gallery') return res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end(GALLERY);
   const photo = /^\/photos\/([\w-]+\.jpg)$/.exec(pathname);
@@ -91,8 +101,6 @@ const server = createServer(async (req, res) => {
     res.writeHead(404).end();
   }
 });
-await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-const origin = `http://127.0.0.1:${server.address().port}`;
 
 // ---------------------------------------------------------------- browser
 
@@ -104,24 +112,38 @@ const context = await chromium.launchPersistentContext(path.join(tmp, 'profile')
 });
 const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
 const extensionId = new URL(worker.url()).host;
+/**
+ * @param {string} url - A page's URL.
+ * @returns {Promise<chrome.tabs.Tab | undefined>} The tab showing it.
+ */
 const tabFor = (url) => worker.evaluate(async (url) => (await chrome.tabs.query({ url }))[0], url);
-/** What a click on a menu item calls (the e2e hook exposes background/background.js's handler). */
-const menuClick = (menuItemId, srcUrl, tab, pageUrl) =>
-  worker.evaluate(([menuItemId, srcUrl, tab, pageUrl]) => globalThis.rotateImageTest.click({ menuItemId, srcUrl, frameId: 0, mediaType: 'image', pageUrl }, tab), [menuItemId, srcUrl, tab, pageUrl]);
-/** What a keyboard shortcut calls. */
-const command = (name, tab) => worker.evaluate(([name, tab]) => globalThis.rotateImageTest.command(name, tab), [name, tab]);
+const hook = testHook(worker);
 
+/**
+ * Wait until the page and its images have loaded and settled.
+ *
+ * @param {Page} page - The page.
+ * @returns {Promise<void>}
+ */
 async function ready(page) {
   await page.waitForLoadState('networkidle');
   await page.evaluate(() => Promise.all([...document.images].map((img) => img.decode().catch(() => {}))));
   await page.waitForTimeout(300);
 }
+/**
+ * Screenshot the page's viewport.
+ *
+ * @param {Page} page - The page.
+ * @param {string} file - A name for it in the temporary folder.
+ * @returns {Promise<string>} The PNG as a data: URL.
+ */
 async function shoot(page, file) {
   const out = path.join(tmp, file);
   await page.screenshot({ path: out });
   return dataUrl(out);
 }
 
+/** @type {string[]} Each screenshot's HTML, in order. */
 const shots = [];
 
 // 1. Before and after "Rotate image" on a post (the default one-item menu, clockwise).
@@ -132,15 +154,16 @@ const shots = [];
   await page.goto(`${origin}/post`);
   await ready(page);
   const before = await shoot(page, 'post-before.png');
-  const src = await page.evaluate(() => document.querySelector('img').currentSrc);
-  await menuClick('rotate-image', src, await tabFor(`${origin}/post`), `${origin}/post`);
+  const src = await page.$eval('img', (img) => img.currentSrc);
+  await hook.click({ menuItemId: 'rotate-image', srcUrl: src, pageUrl: `${origin}/post` }, await tabFor(`${origin}/post`));
   await page.waitForTimeout(400);
-  const turned = await page.evaluate(() => document.querySelector('img').dataset.rotateImage);
+  const turned = await page.$eval('img', (img) => img.dataset.rotateImage);
   if (!turned) throw new Error('The post photo was not turned');
   const after = await shoot(page, 'post-after.png');
   await page.close();
 
   const tabs = [{ title: 'Meet Biscuit – Pawprint', icon: PET.icon, active: true }, { title: 'Lighthouse walks – Coastline', icon: SITE.icon }];
+  /** @type {(x: number, img: string, label: string) => string} One window, its capture and a label. */
   const win = (x, img, label) => `<div class="win" style="left:${x}px">
     ${windowChrome({ tabs, url: 'pawprint.example/posts/meet-biscuit', urlHost: 'pawprint.example', w: geo.w })}
     <img src="${img}" width="${geo.content.width}" height="${geo.content.height}" alt="" style="display:block">
@@ -163,11 +186,20 @@ await gallery.setViewportSize(ZOOMED.content);
 await gallery.goto(`${origin}/gallery`);
 await ready(gallery);
 const galleryTab = await tabFor(`${origin}/gallery`);
-const centre = async (id) => gallery.evaluate((id) => {
-  const r = document.getElementById(id).getBoundingClientRect();
+/**
+ * @param {string} id - A photo's id in the gallery.
+ * @returns {Promise<{ x: number, y: number }>} Its centre, in the page.
+ */
+const centre = async (id) => gallery.locator(`#${id}`).evaluate((el) => {
+  const r = el.getBoundingClientRect();
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-}, id);
-const galleryTabs = (activeViewer, viewerTitle) => [
+});
+/**
+ * @param {boolean} activeViewer - Whether the viewer's tab is open and selected.
+ * @param {string} [viewerTitle] - Its title.
+ * @returns {Tab[]} The gallery window's tabs.
+ */
+const galleryTabs = (activeViewer, viewerTitle = '') => [
   { title: 'Meet Biscuit – Pawprint', icon: PET.icon },
   { title: 'Lighthouse walks: photos – Coastline', icon: SITE.icon, active: !activeViewer },
   ...(activeViewer ? [{ title: viewerTitle, icon: EXT_ICON, active: true }] : []),
@@ -175,14 +207,15 @@ const galleryTabs = (activeViewer, viewerTitle) => [
 {
   const at = await centre('zadar');
   await gallery.mouse.move(at.x + 20, at.y + 30);
-  await command('rotate-right', galleryTab);
+  await hook.command('rotate-right', galleryTab);
   await gallery.waitForTimeout(400);
-  if (!(await gallery.evaluate(() => document.getElementById('zadar').dataset.rotateImage))) throw new Error('Shortcut did not turn the photo');
+  if (!(await gallery.locator('#zadar').getAttribute('data-rotate-image'))) throw new Error('Shortcut did not turn the photo');
   const page = await shoot(gallery, 'gallery.png');
   const z = ZOOMED.zoom;
   const px = WIN.x + (at.x + 20) * z;
   const py = WIN.y + (WIN.strip + WIN.toolbar + at.y + 30) * z;
-  const key = (k, wide = false) => `<span class="key${wide ? ' wide' : ''}">${k}</span>`;
+  /** @type {(k: string) => string} A key cap. */
+  const key = (k) => `<span class="key">${k}</span>`;
   shots.push(canvas({
     caption: 'Hover and press ⌥⇧R (Alt+Shift+R)',
     chrome: windowChrome({ tabs: galleryTabs(false), url: 'coastline.example/lighthouse-walks/photos', urlHost: 'coastline.example', w: ZOOMED.w }),
@@ -200,7 +233,7 @@ const galleryTabs = (activeViewer, viewerTitle) => [
   const at = await centre('zadar');
   await gallery.mouse.move(at.x, at.y);
   const opened = context.waitForEvent('page');
-  await command('open-viewer', galleryTab);
+  await hook.command('open-viewer', galleryTab);
   const viewer = await opened;
   await viewer.setViewportSize(ZOOMED.content);
   await ready(viewer);
@@ -237,10 +270,10 @@ const galleryTabs = (activeViewer, viewerTitle) => [
 {
   const at = await centre('chania');
   await gallery.mouse.move(at.x, at.y);
-  await command('rotate-left', galleryTab);
+  await hook.command('rotate-left', galleryTab);
   await gallery.waitForTimeout(300);
   const opened = context.waitForEvent('page');
-  await command('open-viewer', galleryTab);
+  await hook.command('open-viewer', galleryTab);
   const viewer = await opened;
   await viewer.emulateMedia({ colorScheme: 'dark' });
   await viewer.setViewportSize(ZOOMED.content);

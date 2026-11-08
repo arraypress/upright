@@ -9,9 +9,10 @@
  * Only the network edge is faked: ichef.bbci.co.uk is answered locally.
  * Run with `npm run test:e2e`. Needs Playwright's Chromium: `npx playwright install chromium`.
  * ROTATE_SHOTS=dir also saves screenshots there.
+ *
+ * @module test/e2e/rotate
  */
 import { chromium } from 'playwright';
-import { createServer } from 'node:http';
 import { mkdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -19,11 +20,19 @@ import assert from 'node:assert/strict';
 import { checkRunner, launchExtension, until } from '@arraypress/extension-kit/testing';
 import { settingsStore } from '../../extension/shared/settings.js';
 import { ABOUT_LINKS } from '../../extension/options/about-links.js';
+import { listenLocally } from '../../scripts/local-server.mjs';
+import { testHook } from './hook-client.mjs';
+
+/** @import { Frame, Page } from 'playwright' */
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.dirname(path.dirname(here));
 const extensionPath = path.join(root, '.test-builds', 'e2e');
 const shots = process.env.ROTATE_SHOTS;
+/**
+ * @param {string} name - A file in fixtures/.
+ * @returns {Promise<Buffer>} Its bytes.
+ */
 const fixture = (name) => readFile(path.join(here, 'fixtures', name));
 const BBC = (await fixture('bbc-figure.html')).toString();
 // The webp the BBC <source> picks at this window size, and the size variant the user
@@ -80,30 +89,26 @@ const PAGE = `<!doctype html>
 const FRAME = `<!doctype html><style>body{margin:0}img{display:block}</style>
 <img id="framed" src="/media/photo.png?framed" width="200" height="125" alt="">`;
 
+/** @type {Readonly<Record<string, string>>} */
 const TYPES = { '.png': 'image/png', '.webm': 'video/webm' };
 
-function listen() {
-  return new Promise((resolve) => {
-    const server = createServer(async (req, res) => {
-      const { pathname } = new URL(req.url, 'http://x');
-      const port = server.address().port;
-      if (pathname === '/') return res.end(PAGE.replaceAll('CROSS', `http://localhost:${port}`));
-      if (pathname === '/frame') return res.end(FRAME);
-      const media = /^\/(media|cors)\/([\w-]+\.\w+)$/.exec(pathname);
-      if (!media) return res.writeHead(404).end();
-      const headers = { 'Content-Type': TYPES[path.extname(media[2])] };
-      if (media[1] === 'cors') headers['Access-Control-Allow-Origin'] = '*';
-      res.writeHead(200, headers).end(await fixture(media[2]));
-    });
-    server.listen(0, '127.0.0.1', () => resolve(server));
-  });
-}
-
-const server = await listen();
-const origin = `http://127.0.0.1:${server.address().port}`;
+const { server, origin } = await listenLocally(async (pathname, res) => {
+  // localhost is the same server, but another site: the e2e build has no access to it.
+  if (pathname === '/') return res.end(PAGE.replaceAll('CROSS', `http://localhost:${new URL(origin).port}`));
+  if (pathname === '/frame') return res.end(FRAME);
+  const media = /^\/(media|cors)\/([\w-]+\.\w+)$/.exec(pathname);
+  if (!media) return res.writeHead(404).end();
+  /** @type {Record<string, string>} */
+  const headers = { 'Content-Type': TYPES[path.extname(media[2])] };
+  if (media[1] === 'cors') headers['Access-Control-Allow-Origin'] = '*';
+  res.writeHead(200, headers).end(await fixture(media[2]));
+});
 if (shots) await mkdir(shots, { recursive: true });
 
-const launched = await launchExtension(chromium, extensionPath, { prefix: 'upright-e2e-', viewport: { width: 1320, height: 860 } });
+// Passed as a variable: @arraypress/extension-kit's launchExtension takes Playwright's context
+// options (viewport here) as its docs say, but its declared type lists only prefix and args.
+const launchOptions = { prefix: 'upright-e2e-', viewport: { width: 1320, height: 860 } };
+const launched = await launchExtension(chromium, extensionPath, launchOptions);
 const { context } = launched;
 // The network edge: BBC's image CDN, answered with a local picture.
 const bbcImage = await fixture('photo-wide.png');
@@ -111,7 +116,16 @@ await context.route('https://ichef.bbci.co.uk/**', (route) => route.fulfill({ co
 
 const { check, finish } = checkRunner();
 
+/** @param {number} ms @returns {Promise<void>} Resolves after `ms`. */
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+/**
+ * Assert two numbers are within `tolerance` of each other.
+ *
+ * @param {number} actual - Measured.
+ * @param {number} expected - Wanted.
+ * @param {string} what - For the failure message.
+ * @param {number} [tolerance] - Default 1 (px).
+ */
 const near = (actual, expected, what, tolerance = 1) =>
   assert.ok(Math.abs(actual - expected) <= tolerance, `${what}: ${actual} is not ≈ ${expected}`);
 
@@ -120,44 +134,86 @@ try {
   console.log(`Extension ${extensionId} loaded; site ${origin}\n`);
 
   const page = await context.newPage();
-  page.on('pageerror', (error) => failures.push(`page error: ${error.message}`));
-  const PARKED = [1310, 850]; // Over nothing in particular.
+  /** @type {string[]} Errors the test page threw; checked last. */
+  const pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  /** @type {[number, number]} Over nothing in particular. */
+  const PARKED = [1310, 850];
+  /** Move the pointer off everything. */
+  const park = () => page.mouse.move(...PARKED);
   const load = async () => {
     await page.goto(`${origin}/`);
     await page.evaluate(() => Promise.all([...document.images].map((img) => img.decode().catch(() => {}))));
-    await page.waitForFunction(() => document.getElementById('vid').readyState >= 2);
-    await page.mouse.move(...PARKED);
+    await page.waitForFunction(() => /** @type {HTMLVideoElement} */ (document.getElementById('vid')).readyState >= 2);
+    await park();
   };
   await load();
 
-  const srcOf = (id, frame = page) => frame.evaluate((id) => document.getElementById(id).currentSrc, id);
+  /**
+   * @param {string} id - An <img> or <video>'s id.
+   * @param {Page | Frame} [frame] - Where it is. Default the test page.
+   * @returns {Promise<string>} What it shows.
+   */
+  const srcOf = (id, frame = page) =>
+    frame.evaluate((id) => /** @type {HTMLImageElement | HTMLVideoElement} */ (document.getElementById(id)).currentSrc, id);
   const pageTab = () => worker.evaluate(async (url) => (await chrome.tabs.query({ url }))[0], `${origin}/`);
   const tabCount = () => worker.evaluate(async () => (await chrome.tabs.query({})).length);
+  const hook = testHook(worker);
 
-  /** Call what the menu calls, as Chrome would for a click on `srcUrl` in frame `frameId`. */
+  /**
+   * Call what the menu calls, as Chrome would for a click on `srcUrl` in frame `frameId`.
+   *
+   * @param {string} menuItemId - The item.
+   * @param {string} srcUrl - The right-clicked media's URL.
+   * @param {object} [where] - Where it was clicked.
+   * @param {number} [where.frameId] - Default the top frame.
+   * @param {'image' | 'video'} [where.mediaType] - Default image.
+   * @param {chrome.tabs.Tab} [where.tab] - Default the tab showing `pageUrl`.
+   * @param {string} [where.pageUrl] - Default the test page.
+   */
   const click = async (menuItemId, srcUrl, { frameId = 0, mediaType = 'image', tab, pageUrl = `${origin}/` } = {}) => {
-    await worker.evaluate(async ([menuItemId, srcUrl, frameId, mediaType, pageUrl, tab]) => {
-      tab ??= (await chrome.tabs.query({ url: pageUrl }))[0];
-      await globalThis.rotateImageTest.click({ menuItemId, srcUrl, frameId, mediaType, pageUrl }, tab);
-    }, [menuItemId, srcUrl, frameId, mediaType, pageUrl, tab]);
+    await hook.click({ menuItemId, srcUrl, frameId, mediaType, pageUrl }, tab);
   };
-  /** Call what a keyboard shortcut calls. */
+  /**
+   * Call what a keyboard shortcut calls.
+   *
+   * @param {string} name - The command.
+   * @param {chrome.tabs.Tab} [tab] - Default the test page's tab.
+   */
   const command = async (name, tab) => {
-    await worker.evaluate(async ([name, tab]) => globalThis.rotateImageTest.command(name, tab), [name, tab ?? await pageTab()]);
+    await hook.command(name, tab ?? await pageTab());
   };
-  /** Settings as the options page stores them: per-computer ones in local, the rest in sync. */
+  /**
+   * Settings as the options page stores them: per-computer ones in local, the rest in sync.
+   *
+   * @param {Record<string, unknown>} changes - Raw values.
+   */
   const setSettings = (changes) => worker.evaluate(([changes, localKeys]) => {
+    /** @type {[Record<string, unknown>, Record<string, unknown>]} */
     const [local, synced] = [{}, {}];
     for (const [key, value] of Object.entries(changes)) (localKeys.includes(key) ? local : synced)[key] = value;
     return Promise.all([chrome.storage.local.set(local), chrome.storage.sync.set(synced)]);
-  }, [changes, settingsStore.localKeys]);
+  }, /** @type {const} */ ([changes, /** @type {readonly string[]} */ (settingsStore.localKeys)]));
   const stored = () => worker.evaluate(async () => ({ sync: await chrome.storage.sync.get(null), local: await chrome.storage.local.get(null) }));
-  /** Whether a menu item id exists right now. */
-  const menuHas = (id) => worker.evaluate((id) => new Promise((resolve) => chrome.contextMenus.update(id, {}, () => resolve(!chrome.runtime.lastError))), id);
+  /**
+   * Whether a menu item id exists right now (updating a missing one fails).
+   *
+   * @param {string} id - The item's id.
+   * @returns {Promise<boolean>}
+   */
+  const menuHas = (id) => worker.evaluate(
+    (id) => chrome.contextMenus.update(id, /** @type {Omit<chrome.contextMenus.CreateProperties, 'id'>} */ ({})).then(() => true, () => false),
+    id,
+  );
 
-  /** Computed individual transforms, the page's own transform, and the state attribute. */
+  /**
+   * Computed individual transforms, the page's own transform, and the state attribute.
+   *
+   * @param {string} id - The element's id.
+   * @param {Page | Frame} [frame] - Where it is. Default the test page.
+   */
   const drawn = (id, frame = page) => frame.evaluate((id) => {
-    const el = document.getElementById(id);
+    const el = /** @type {HTMLElement} */ (document.getElementById(id));
     const style = getComputedStyle(el);
     const rect = el.getBoundingClientRect();
     return {
@@ -168,9 +224,19 @@ try {
     };
   }, id);
 
+  /**
+   * Move the pointer to the centre of an element in the test page.
+   *
+   * @param {string} id - The element's id.
+   */
+  const hover = async (id) => {
+    const { rect } = await drawn(id);
+    await page.mouse.move(rect.cx, rect.cy);
+  };
+
   /** Every element's layout box, and the page's scroll size: what must not move. */
   const layout = () => page.evaluate(() => ({
-    boxes: [...document.querySelectorAll('figure, img, video, iframe, figcaption')]
+    boxes: [.../** @type {NodeListOf<HTMLElement>} */ (document.querySelectorAll('figure, img, video, iframe, figcaption'))]
       .map((el) => [el.id || el.localName, el.offsetLeft, el.offsetTop, el.offsetWidth, el.offsetHeight]),
     scroll: [document.documentElement.scrollWidth, document.documentElement.scrollHeight],
   }));
@@ -240,7 +306,7 @@ try {
     await click('flip-horizontal', await srcOf('plain'));
     d = await drawn('plain');
     assert.equal(d.scale, '-1 1');
-    const state = JSON.parse(d.state);
+    const state = JSON.parse(d.state ?? 'null');
     assert.deepEqual([state.r, state.f], [180, true], 'the state attribute');
     await click('flip-horizontal', await srcOf('plain'));
     await click('rotate-left', await srcOf('plain'));
@@ -257,10 +323,10 @@ try {
     near(d.rect.cx, start.pic.rect.cx, 'centre x');
   });
 
-  const bbcRotate = () => page.evaluate(() => getComputedStyle(document.querySelector('#bbc img')).rotate);
+  const bbcRotate = () => page.$eval('#bbc img', (img) => getComputedStyle(img).rotate);
 
   await check('BBC News markup: a <picture> with webp srcset turns in place', async () => {
-    const src = await page.evaluate(() => document.querySelector('#bbc img').currentSrc);
+    const src = await page.$eval('#bbc img', (img) => /** @type {HTMLImageElement} */ (img).currentSrc);
     assert.equal(src, BBC_SHOWN);
     await click('rotate-right', src);
     assert.equal(await bbcRotate(), '90deg');
@@ -281,10 +347,11 @@ try {
     // The play button sits bottom-left; a quarter turn clockwise puts it at the top.
     // Clicking it where it's drawn now must still play. (Chrome's controls swallow the
     // pointer events, so the playback state is what shows the click landed.)
-    assert.equal(await page.evaluate(() => document.getElementById('vid').paused), true);
+    const paused = () => page.evaluate(() => /** @type {HTMLVideoElement} */ (document.getElementById('vid')).paused);
+    assert.equal(await paused(), true);
     await page.mouse.click(d.rect.cx, d.rect.y + 15);
-    await until(() => page.evaluate(() => !document.getElementById('vid').paused), 'the turned play button to play the video');
-    await page.mouse.move(...PARKED);
+    await until(async () => !(await paused()), 'the turned play button to play the video');
+    await park();
   });
 
   await check('a page transform (rotate + translate, top-left origin) is kept, and the box stays put', async () => {
@@ -320,12 +387,11 @@ try {
   });
 
   await check('of two copies on screen, the one under the pointer turns', async () => {
-    const b = await drawn('hover-b');
-    await page.mouse.move(b.rect.cx, b.rect.cy);
+    await hover('hover-b');
     await click('rotate-180', await srcOf('hover-b'));
     assert.equal((await drawn('hover-b')).rotate, '180deg');
     assert.equal((await drawn('hover-a')).rotate, 'none');
-    await page.mouse.move(...PARKED);
+    await park();
   });
 
   await check('Reset puts back exactly what the page had', async () => {
@@ -334,18 +400,30 @@ try {
       const d = await drawn(id);
       assert.equal(d.state, null, `${id}: state attribute`);
       assert.equal(d.style, null, `${id}: no style attribute left behind`);
-      for (const key of ['rotate', 'scale', 'translate', 'transform']) assert.equal(d[key], start[id][key], `${id}: ${key}`);
+      for (const key of /** @type {const} */ (['rotate', 'scale', 'translate', 'transform'])) assert.equal(d[key], start[id][key], `${id}: ${key}`);
     }
   });
 
-  const frames = () => worker.evaluate(async (pageUrl) => {
-    const [tab] = await chrome.tabs.query({ url: pageUrl });
-    return chrome.webNavigation.getAllFrames({ tabId: tab.id });
-  }, `${origin}/`);
+  /**
+   * The test page's frame whose URL passes `match`, as Chrome's menu would identify it.
+   *
+   * @param {(url: string) => boolean} match - Picks the frame.
+   * @returns {Promise<chrome.webNavigation.GetAllFrameResultDetails>} The frame.
+   */
+  const chromeFrame = async (match) => {
+    const frames = await worker.evaluate(async (pageUrl) => {
+      const [tab] = await chrome.tabs.query({ url: pageUrl });
+      return tab?.id === undefined ? null : chrome.webNavigation.getAllFrames({ tabId: tab.id });
+    }, `${origin}/`);
+    const found = frames?.find((f) => match(f.url));
+    assert.ok(found, 'the frame is in the page');
+    return found;
+  };
 
   await check('a same-site frame: turned in place, in that frame', async () => {
-    const frameId = (await frames()).find((f) => f.url === `${origin}/frame`).frameId;
+    const { frameId } = await chromeFrame((url) => url === `${origin}/frame`);
     const frame = page.frames().find((f) => f.url() === `${origin}/frame`);
+    assert.ok(frame, 'Playwright sees the frame');
     await click('rotate-right', await srcOf('framed', frame), { frameId });
     assert.equal((await drawn('framed', frame)).rotate, '90deg');
   });
@@ -353,7 +431,7 @@ try {
   await check('nothing found, or a frame we can\'t reach: no tab opens', async () => {
     const tabs = await tabCount();
     await click('rotate-right', `${origin}/media/not-on-this-page.png`);
-    const cross = (await frames()).find((f) => f.url.startsWith('http://localhost'));
+    const cross = await chromeFrame((url) => url.startsWith('http://localhost'));
     await click('rotate-left', `${new URL(cross.url).origin}/media/photo.png?framed`, { frameId: cross.frameId });
     await sleep(300);
     assert.equal(await tabCount(), tabs);
@@ -362,29 +440,26 @@ try {
   // --- Keyboard shortcuts (chrome.commands) ---
 
   await check('shortcut: turns the image under the pointer', async () => {
-    const b = await drawn('hover-a');
-    await page.mouse.move(b.rect.cx, b.rect.cy);
+    await hover('hover-a');
     await command('rotate-right');
     assert.equal((await drawn('hover-a')).rotate, '90deg');
     await command('rotate-left');
     assert.equal((await drawn('hover-a')).state, null, 'back to upright');
-    await page.mouse.move(...PARKED);
+    await park();
   });
 
   await check('shortcut: over an overlay (a gallery\'s link layer), the photo underneath turns', async () => {
-    const overlay = await page.locator('#overlay').boundingBox();
-    await page.mouse.move(overlay.x + overlay.width / 2, overlay.y + overlay.height / 2);
-    assert.equal(await page.evaluate(() => [...document.querySelectorAll(':hover')].at(-1).id), 'overlay');
+    await hover('overlay');
+    assert.equal(await page.evaluate(() => [...document.querySelectorAll(':hover')].at(-1)?.id), 'overlay');
     await command('rotate-right');
     assert.equal((await drawn('under')).rotate, '90deg');
     await command('reset');
     assert.equal((await drawn('under')).state, null);
-    await page.mouse.move(...PARKED);
+    await park();
   });
 
   await check('shortcut: Alt+Shift+V opens the image under the pointer in one viewer tab, at its turn', async () => {
-    const b = await drawn('hover-a');
-    await page.mouse.move(b.rect.cx, b.rect.cy);
+    await hover('hover-a');
     await command('rotate-right'); // Turned in the page first: the viewer starts there.
     const tabs = await tabCount();
     const opened = context.waitForEvent('page');
@@ -399,7 +474,7 @@ try {
     assert.equal(await tabCount(), tabs + 1, 'exactly one tab');
     await viewer.close();
     await command('reset');
-    await page.mouse.move(...PARKED);
+    await park();
   });
 
   await check('shortcut: with nothing under the pointer, nothing changes and no tab opens', async () => {
@@ -414,22 +489,36 @@ try {
 
   // --- The viewer ---
 
+  /**
+   * "Open in new tab" on a test page element, once the viewer has laid it out.
+   *
+   * @param {string} id - The element's id.
+   * @param {'image' | 'video'} [mediaType] - Default image.
+   * @returns {Promise<Page>} The viewer.
+   */
   const openViewer = async (id, mediaType = 'image') => {
     const opened = context.waitForEvent('page');
     await click('open-in-new-tab', await srcOf(id), { mediaType });
     const viewer = await opened;
     await viewer.waitForLoadState();
-    await viewer.waitForFunction(() => document.getElementById('frame').style.width);
+    await viewer.waitForFunction(() => /** @type {HTMLElement} */ (document.getElementById('frame')).style.width);
     return viewer;
   };
+  /**
+   * What the viewer shows: its address's turn, zoom, transform, frame size and Save button.
+   *
+   * @param {Page} viewer - The viewer.
+   */
   const viewerState = (viewer) => viewer.evaluate(() => {
-    const media = document.querySelector('#frame > img, #frame > video');
+    /** @type {(id: string) => HTMLElement} */
+    const get = (id) => /** @type {HTMLElement} */ (document.getElementById(id));
+    const media = /** @type {HTMLElement} */ (document.querySelector('#frame > img, #frame > video'));
     const params = new URLSearchParams(location.search);
     return {
-      r: params.get('r'), f: params.get('f'), zoom: document.getElementById('zoom').textContent,
+      r: params.get('r'), f: params.get('f'), zoom: get('zoom').textContent,
       transform: media.style.transform,
-      frame: [parseFloat(document.getElementById('frame').style.width), parseFloat(document.getElementById('frame').style.height)],
-      save: { disabled: document.getElementById('save').disabled, title: document.getElementById('save-wrap').title },
+      frame: [parseFloat(get('frame').style.width), parseFloat(get('frame').style.height)],
+      save: { disabled: /** @type {HTMLButtonElement} */ (get('save')).disabled, title: get('save-wrap').title },
     };
   });
 
@@ -460,7 +549,7 @@ try {
     const viewer = await openViewer('plain');
     const tab = await viewer.evaluate(() => chrome.tabs.getCurrent());
     const tabs = await tabCount();
-    const src = await viewer.evaluate(() => document.querySelector('#frame > img').currentSrc);
+    const src = await viewer.$eval('#frame > img', (img) => /** @type {HTMLImageElement} */ (img).currentSrc);
     await click('rotate-right', src, { tab, pageUrl: viewer.url() });
     await until(async () => (await viewerState(viewer)).r === '90', 'the viewer to turn');
     await click('flip-horizontal', src, { tab, pageUrl: viewer.url() });
@@ -497,7 +586,7 @@ try {
 
   await check('viewer: Save is off with a reason when the site doesn\'t allow reading pixels', async () => {
     const viewer = await openViewer('remote');
-    await viewer.waitForFunction(() => document.getElementById('save-wrap').title);
+    await viewer.waitForFunction(() => /** @type {HTMLElement} */ (document.getElementById('save-wrap')).title);
     const v = await viewerState(viewer);
     assert.equal(v.save.disabled, true);
     assert.match(v.save.title, /doesn’t let other pages read/);
@@ -506,7 +595,7 @@ try {
 
   await check('viewer: with CORS, Save downloads the turned pixels', async () => {
     const viewer = await openViewer('cors');
-    await viewer.waitForFunction(() => !document.getElementById('save').disabled);
+    await viewer.waitForFunction(() => !(/** @type {HTMLButtonElement} */ (document.getElementById('save'))).disabled);
     await viewer.keyboard.press('r');
     const download = viewer.waitForEvent('download');
     await viewer.click('#save');
@@ -548,10 +637,22 @@ try {
 
   // --- Options and single-key mode ---
 
-  await check('options: lists the shortcuts and shows every setting in English', async () => {
+  /**
+   * Open the options page, once it has listed the shortcuts (its last step).
+   *
+   * @returns {Promise<Page>} The page.
+   */
+  const openOptions = async () => {
     const options = await context.newPage();
     await options.goto(`chrome-extension://${extensionId}/options/options.html`);
-    await options.waitForFunction(() => document.getElementById('shortcuts').children.length);
+    await options.waitForFunction(() => /** @type {HTMLElement} */ (document.getElementById('shortcuts')).children.length);
+    return options;
+  };
+  /** @typedef {typeof globalThis & { syncWrites: number }} Counted The worker, counting sync writes. */
+  const syncWrites = () => worker.evaluate(() => /** @type {Counted} */ (globalThis).syncWrites);
+
+  await check('options: lists the shortcuts and shows every setting in English', async () => {
+    const options = await openOptions();
     // Set shortcuts are listed; the way to change them is Chrome's own page, as a link row.
     assert.equal(await options.locator('#edit-shortcuts').innerText(), 'Keyboard shortcuts');
     assert.equal(await options.locator('#no-shortcuts').isVisible(), false);
@@ -584,20 +685,19 @@ try {
   await check('options: a burst of clicks is one write to Chrome Sync, after the clicks stop', async () => {
     await setSettings({ menuStyle: 'single', singleDirection: 'right' });
     await worker.evaluate(() => {
-      globalThis.syncWrites = 0;
-      chrome.storage.sync.onChanged.addListener(() => { globalThis.syncWrites++; });
+      const counted = /** @type {Counted} */ (globalThis);
+      counted.syncWrites = 0;
+      chrome.storage.sync.onChanged.addListener(() => { counted.syncWrites++; });
     });
-    const options = await context.newPage();
-    await options.goto(`chrome-extension://${extensionId}/options/options.html`);
-    await options.waitForFunction(() => document.getElementById('shortcuts').children.length);
+    const options = await openOptions();
     await options.locator('#singleDirection').selectOption('left'); // Only while the one item is chosen.
     for (const style of ['full', 'single', 'full', 'single', 'full']) {
       await options.locator(`input[name="menuStyle"][value="${style}"]`).check();
     }
-    assert.equal(await worker.evaluate(() => globalThis.syncWrites), 0, 'nothing written mid-burst');
+    assert.equal(await syncWrites(), 0, 'nothing written mid-burst');
     await until(async () => (await stored()).sync.menuStyle === 'full', 'the menu style to reach sync');
     await options.waitForTimeout(1500);
-    assert.equal(await worker.evaluate(() => globalThis.syncWrites), 1);
+    assert.equal(await syncWrites(), 1);
     assert.equal((await stored()).sync.singleDirection, 'left');
     // The background rebuilt the menu from sync.
     await until(() => menuHas('rotate'), 'the full menu');
@@ -609,9 +709,7 @@ try {
 
   await check('options: closing the page writes a change still waiting', async () => {
     await setSettings({ menuStyle: 'single', singleDirection: 'right' });
-    const options = await context.newPage();
-    await options.goto(`chrome-extension://${extensionId}/options/options.html`);
-    await options.waitForFunction(() => document.getElementById('shortcuts').children.length);
+    const options = await openOptions();
     await options.locator('#singleDirection').selectOption('left');
     await options.close({ runBeforeUnload: true });
     await until(async () => (await stored()).sync.singleDirection === 'left', 'the change to reach sync');
@@ -632,20 +730,22 @@ try {
   await load();
   await sleep(300); // The content script loads its module.
 
+  /** @typedef {typeof window & { pageKeys: string[] }} KeyLog The test page, logging its own keydowns. */
+  const clearPageKeys = () => page.evaluate(() => { /** @type {KeyLog} */ (window).pageKeys = []; });
+  const pageKeys = () => page.evaluate(() => /** @type {KeyLog} */ (window).pageKeys);
+
   await check('single-key mode: R over an image turns it; L back; the page never sees those keys', async () => {
-    await page.evaluate(() => (window.pageKeys = []));
-    const b = await drawn('hover-a');
-    await page.mouse.move(b.rect.cx, b.rect.cy);
+    await clearPageKeys();
+    await hover('hover-a');
     await page.keyboard.press('r');
     await until(async () => (await drawn('hover-a')).rotate === '90deg', 'R to turn the image');
     await page.keyboard.press('l');
     await until(async () => (await drawn('hover-a')).state === null, 'L to turn it back');
-    assert.deepEqual(await page.evaluate(() => window.pageKeys), []);
+    assert.deepEqual(await pageKeys(), []);
   });
 
   await check('single-key mode: over an overlay, R turns the photo underneath; 0 resets', async () => {
-    const overlay = await page.locator('#overlay').boundingBox();
-    await page.mouse.move(overlay.x + overlay.width / 2, overlay.y + overlay.height / 2);
+    await hover('overlay');
     await page.keyboard.press('r');
     await until(async () => (await drawn('under')).rotate === '90deg', 'R over the overlay');
     await page.keyboard.press('0');
@@ -655,25 +755,23 @@ try {
   await check('single-key mode: typing "r" in a field types it, and turns nothing', async () => {
     await page.click('#field');
     // The pointer stays over the field; move it over an image to be sure focus is what counts.
-    const b = await drawn('hover-a');
-    await page.mouse.move(b.rect.cx, b.rect.cy);
+    await hover('hover-a');
     await page.keyboard.type('rrl0');
     assert.equal(await page.inputValue('#field'), 'rrl0');
     assert.equal(await page.evaluate(() => document.querySelectorAll('[data-rotate-image]').length), 0);
-    await page.evaluate(() => document.activeElement.blur());
-    await page.mouse.move(...PARKED);
+    await page.evaluate(() => /** @type {HTMLElement} */ (document.activeElement).blur());
+    await park();
   });
 
   await check('single-key mode: R with nothing hovered does nothing, and the page\'s own handler gets it', async () => {
-    await page.evaluate(() => (window.pageKeys = []));
+    await clearPageKeys();
     await page.keyboard.press('r');
-    assert.deepEqual(await page.evaluate(() => window.pageKeys), ['r']);
+    assert.deepEqual(await pageKeys(), ['r']);
     assert.equal(await page.evaluate(() => document.querySelectorAll('[data-rotate-image]').length), 0);
   });
 
   await check('single-key mode: H and V only with "Extra keys" on', async () => {
-    const b = await drawn('hover-a');
-    await page.mouse.move(b.rect.cx, b.rect.cy);
+    await hover('hover-a');
     await page.keyboard.press('h');
     await sleep(200);
     assert.equal((await drawn('hover-a')).state, null, 'H is the page\'s while extra keys are off');
@@ -682,7 +780,7 @@ try {
     await page.keyboard.press('h');
     await until(async () => (await drawn('hover-a')).scale === '-1 1', 'H to flip');
     await page.keyboard.press('0');
-    await page.mouse.move(...PARKED);
+    await park();
   });
 
   await check('single-key mode: the never-on list and switching it off unregister the script', async () => {
@@ -696,6 +794,10 @@ try {
     for (const key of [...settingsStore.localKeys, 'toolbarDark']) assert.ok(!(key in sync), `${key} reached sync`);
     assert.deepEqual(Object.keys(local).filter((key) => key !== 'toolbarDark').sort(), [...settingsStore.localKeys].sort());
     assert.deepEqual(sync.neverSites, ['127.0.0.1']);
+  });
+
+  await check('the test page threw no errors', () => {
+    assert.deepEqual(pageErrors, []);
   });
 } finally {
   await launched.close();

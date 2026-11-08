@@ -1,5 +1,9 @@
-// Upright's own settings: which are this computer's and how the store keeps them. The store's
-// general behaviour (refused writes, the debounced saver) is tested in @arraypress/extension-kit.
+/**
+ * Upright's own settings: which are this computer's and how the store keeps them. The store's
+ * general behaviour (refused writes, the debounced saver) is tested in @arraypress/extension-kit.
+ *
+ * @module test/settings
+ */
 import { describe, expect, test } from 'vitest';
 import { fakeChromeStorage } from '@arraypress/extension-kit/testing';
 import { DEFAULTS, settingsStore } from '../extension/shared/settings.js';

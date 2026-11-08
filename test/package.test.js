@@ -1,5 +1,9 @@
-// The store zip is exactly extension/, less source-only files; every path the extension names
-// resolves inside it; and the single-key content script can load everything it imports.
+/**
+ * The store zip is exactly extension/, less source-only files; every path the extension names
+ * resolves inside it; and the single-key content script can load everything it imports.
+ *
+ * @module test/package
+ */
 import { describe, expect, test } from 'vitest';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';

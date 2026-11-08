@@ -1,5 +1,9 @@
-// How Upright wires the light/dark toolbar glyph. The theme itself (reports, the offscreen
-// watcher) is tested in @arraypress/extension-kit; test/e2e/toolbar.mjs runs it in Chromium.
+/**
+ * How Upright wires the light/dark toolbar glyph. The theme itself (reports, the offscreen
+ * watcher) is tested in @arraypress/extension-kit; test/e2e/toolbar.mjs runs it in Chromium.
+ *
+ * @module test/toolbar-theme
+ */
 import { expect, test } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { fakeChromeStorage } from '@arraypress/extension-kit/testing';

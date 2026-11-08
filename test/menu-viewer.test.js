@@ -1,3 +1,9 @@
+/**
+ * The right-click menu, the manifest, settings and sites, single-key registration, and the
+ * viewer's address, zoom and saved-copy names.
+ *
+ * @module test/menu-viewer
+ */
 import { describe, expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { actionFor, menuItems, OPEN_ID, PARENT_ID } from '../extension/background/menu.js';
@@ -6,10 +12,17 @@ import { DEFAULTS, normalizeSettings } from '../extension/shared/settings.js';
 import { neverPatterns, originPattern, siteOrigin } from '../extension/shared/sites.js';
 import { readViewerUrl, viewerUrl } from '../extension/shared/rotate.js';
 import { ACTIONS } from '../extension/shared/transform.js';
-import { copyFile, fitZoom, nextZoom } from '../extension/viewer/viewer-math.js';
+import { copyFile, fitZoom, mediaName, nextZoom } from '../extension/viewer/viewer-math.js';
 
-const locale = (name) => JSON.parse(readFileSync(new URL(`../extension/_locales/${name}/messages.json`, import.meta.url)));
+/** @import { Settings } from '../extension/shared/settings.js' */
+
+/**
+ * @param {string} name - A locale folder, e.g. "en_GB".
+ * @returns {Record<string, { message: string }>} Its messages.json.
+ */
+const locale = (name) => JSON.parse(readFileSync(new URL(`../extension/_locales/${name}/messages.json`, import.meta.url), 'utf8'));
 const en = locale('en');
+/** @param {string} name @returns {string} The English message, or '' (as chrome.i18n.getMessage). */
 const message = (name) => en[name]?.message ?? '';
 
 describe('menu', () => {
@@ -39,7 +52,7 @@ describe('menu', () => {
   test('full menu: every item is an action the transform maths knows, or the viewer', () => {
     const ids = full.filter((item) => item.title && item.id !== PARENT_ID).map((item) => item.id);
     expect(ids.filter((id) => id !== OPEN_ID)).toEqual(ACTIONS);
-    for (const id of ids) expect(actionFor(id, DEFAULTS)).toBe(id);
+    for (const id of ids) expect(actionFor(String(id), DEFAULTS)).toBe(id);
     expect(actionFor('separator', DEFAULTS)).toBeNull();
   });
 
@@ -56,10 +69,12 @@ describe('menu', () => {
 });
 
 describe('manifest', () => {
-  const manifest = JSON.parse(readFileSync(new URL('../extension/manifest.json', import.meta.url)));
+  const manifest = JSON.parse(readFileSync(new URL('../extension/manifest.json', import.meta.url), 'utf8'));
 
   test('four shortcuts (Chrome allows at most four suggested keys), Alt+Shift+V opens the viewer', () => {
-    const keys = Object.fromEntries(Object.entries(manifest.commands).map(([name, c]) => [name, c.suggested_key?.default]));
+    /** @type {Record<string, { suggested_key?: { default?: string } }>} */
+    const commands = manifest.commands;
+    const keys = Object.fromEntries(Object.entries(commands).map(([name, c]) => [name, c.suggested_key?.default]));
     expect(keys).toEqual({ 'rotate-right': 'Alt+Shift+R', 'rotate-left': 'Alt+Shift+L', reset: 'Alt+Shift+0', 'open-viewer': 'Alt+Shift+V' });
   });
 
@@ -86,8 +101,14 @@ describe('settings and sites', () => {
 });
 
 describe('single-key registration', () => {
-  /** isGranted backed by a set of held patterns, as chrome.permissions.contains answers. */
+  /**
+   * isGranted backed by a set of held patterns, as chrome.permissions.contains answers.
+   *
+   * @param {...string} held - Granted patterns.
+   * @returns {(patterns: string[]) => Promise<boolean>} Whether all of `patterns` are held.
+   */
   const holding = (...held) => async (patterns) => patterns.every((p) => held.includes(p));
+  /** @param {Record<string, unknown>} changes @returns {Settings} Single-key mode on, plus `changes`. */
   const on = (changes) => normalizeSettings({ singleKey: true, ...changes });
 
   test('off, or nothing granted: nothing registered', async () => {
@@ -109,7 +130,7 @@ describe('single-key registration', () => {
 
 describe('viewer address', () => {
   test('round-trips the source, kind and state', () => {
-    const media = { src: 'https://example.com/a b.jpg?x=1&y=2', kind: 'video', state: { r: 270, f: true } };
+    const media = { src: 'https://example.com/a b.jpg?x=1&y=2', kind: /** @type {const} */ ('video'), state: { r: 270, f: true } };
     const url = viewerUrl('chrome-extension://id/viewer/viewer.html', media);
     expect(url).toBe('chrome-extension://id/viewer/viewer.html?src=https%3A%2F%2Fexample.com%2Fa+b.jpg%3Fx%3D1%26y%3D2&type=video&r=270&f=1');
     expect(readViewerUrl(new URL(url).search)).toEqual(media);
@@ -142,5 +163,12 @@ describe('viewer zoom and saving', () => {
     expect(copyFile('https://x.com/a/icon.gif')).toEqual({ name: 'icon-rotated.png', type: 'image/png' });
     expect(copyFile('https://x.com/')).toEqual({ name: 'image-rotated.png', type: 'image/png' });
     expect(copyFile('data:image/jpeg;base64,AAAA')).toEqual({ name: 'image-rotated.jpg', type: 'image/jpeg' });
+  });
+
+  test('the title is the file name; data: URLs and junk have none', () => {
+    expect(mediaName('https://x.com/photos/a%20b.jpg?w=800')).toBe('a b.jpg');
+    expect(mediaName('data:image/png;base64,AAAA')).toBe('');
+    expect(mediaName('not a url')).toBe('');
+    expect(mediaName('https://x.com/%E0%A4%A')).toBe('');
   });
 });

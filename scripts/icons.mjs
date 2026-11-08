@@ -1,4 +1,9 @@
-/** Render extension/icons/icon.svg to the PNG sizes the manifest lists. Run by hand after editing the SVG. */
+/**
+ * Render extension/icons/icon.svg to the PNG sizes the manifest lists. Run by hand after
+ * editing the SVG: `npm run icons`.
+ *
+ * @module scripts/icons
+ */
 import { chromium } from 'playwright';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
