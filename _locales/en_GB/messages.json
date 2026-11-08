@@ -1,0 +1,26 @@
+{
+  "extDescription": {
+    "message": "Turn sideways images and videos upright from the right-click menu: rotate or flip them in place, or open them rotated in a new tab."
+  },
+  "menuRotateRight": {
+    "message": "Rotate clockwise"
+  },
+  "menuRotateLeft": {
+    "message": "Rotate anti-clockwise"
+  },
+  "viewerRotateLeft": {
+    "message": "Rotate anti-clockwise (Shift+R)"
+  },
+  "optionsDirectionLeft": {
+    "message": "Rotates anti-clockwise"
+  },
+  "optionsKeyRotate": {
+    "message": "Rotate clockwise / anti-clockwise"
+  },
+  "commandRotateLeft": {
+    "message": "Rotate the image under the pointer anti-clockwise"
+  },
+  "optionsSingleKeySub": {
+    "message": "Point at an image or video and press R (clockwise), L (anti-clockwise) or 0 (reset), with no other key"
+  }
+}

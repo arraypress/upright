@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Upright settings</title>
+  <link rel="icon" href="icons/icon-32.png">
+  <link rel="stylesheet" href="chrome-ui.css">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <header class="toolbar">
+    <div class="toolbar-start">
+      <img src="icons/icon-48.png" alt="" width="24" height="24">
+      <h1 data-i18n="extShortName">Upright</h1>
+    </div>
+    <div class="toolbar-center"></div>
+    <div class="toolbar-end">
+      <span id="status" class="status secondary" role="status" aria-live="polite"></span>
+    </div>
+  </header>
+
+  <main class="page">
+    <h2 class="section-title" id="menu-heading" data-i18n="optionsMenuHeading">Right-click menu</h2>
+    <section class="card" aria-labelledby="menu-heading">
+      <div role="radiogroup" aria-labelledby="menu-heading">
+        <label class="row two-line">
+          <span class="label">
+            <span data-i18n="optionsStyleSingle">One item</span>
+            <span class="secondary" data-i18n="optionsStyleSingleSub"></span>
+          </span>
+          <input type="radio" name="menuStyle" value="single">
+        </label>
+        <label class="row two-line">
+          <span class="label">
+            <span data-i18n="optionsStyleFull">Full menu</span>
+            <span class="secondary" data-i18n="optionsStyleFullSub"></span>
+          </span>
+          <input type="radio" name="menuStyle" value="full">
+        </label>
+      </div>
+      <div class="row two-line" id="direction-row">
+        <label class="label" for="singleDirection">
+          <span data-i18n="optionsDirection">With one item, a click</span>
+          <span class="secondary" id="single-hint"></span>
+        </label>
+        <select id="singleDirection">
+          <option value="right" data-i18n="optionsDirectionRight">Rotates clockwise</option>
+          <option value="left" data-i18n="optionsDirectionLeft">Rotates counterclockwise</option>
+        </select>
+      </div>
+    </section>
+
+    <h2 class="section-title" id="shortcuts-heading" data-i18n="optionsShortcutsHeading">Keyboard shortcuts</h2>
+    <section class="card" aria-labelledby="shortcuts-heading">
+      <p class="row text"><span class="label" data-i18n="optionsShortcutsHint"></span></p>
+      <div id="shortcuts"></div>
+      <button id="edit-shortcuts" type="button" class="link-row external">
+        <span class="label">
+          <span data-i18n="optionsShortcutsHeading">Keyboard shortcuts</span>
+          <span id="no-shortcuts" class="secondary" data-i18n="optionsNoShortcuts" hidden></span>
+        </span>
+      </button>
+    </section>
+
+    <h2 class="section-title" id="single-key-heading" data-i18n="optionsSingleKey">Single-key mode</h2>
+    <section class="card" aria-labelledby="single-key-heading">
+      <label class="row two-line">
+        <span class="label">
+          <span data-i18n="optionsSingleKeySwitch">Rotate with one key</span>
+          <span class="secondary" data-i18n="optionsSingleKeySub"></span>
+          <span class="secondary warning" data-i18n="optionsSingleKeyWarning"></span>
+        </span>
+        <input id="singleKey" type="checkbox" class="switch" role="switch">
+      </label>
+      <div class="row" data-needs-keys>
+        <label class="label" for="singleKeyScope" data-i18n="optionsScope">Where</label>
+        <select id="singleKeyScope">
+          <option value="all" data-i18n="optionsScopeAll">All sites</option>
+          <option value="chosen" data-i18n="optionsScopeChosen">Only sites I choose</option>
+        </select>
+      </div>
+      <div id="chosen-row" data-needs-keys>
+        <ul class="list" id="singleKeySites"></ul>
+        <form class="row add" id="add-site">
+          <input type="text" id="site-input" data-i18n-placeholder="optionsSitePlaceholder" autocomplete="off" spellcheck="false">
+          <button type="submit" data-i18n="optionsAdd">Add</button>
+        </form>
+      </div>
+      <label class="row two-line" data-needs-keys>
+        <span class="label">
+          <span data-i18n="optionsExtraKeys">Extra keys</span>
+          <span class="secondary" data-i18n="optionsExtraKeysSub"></span>
+        </span>
+        <input id="extraKeys" type="checkbox" class="switch" role="switch">
+      </label>
+    </section>
+
+    <h2 class="section-title" id="never-heading" data-i18n="optionsNeverHeading" data-needs-keys>Never on</h2>
+    <section class="card" aria-labelledby="never-heading" data-needs-keys>
+      <p class="row text"><span class="label" data-i18n="optionsNeverHint"></span></p>
+      <ul class="list" id="neverSites"></ul>
+      <form class="row add" id="add-never">
+        <input type="text" id="never-input" data-i18n-placeholder="optionsSitePlaceholder" autocomplete="off" spellcheck="false">
+        <button type="submit" data-i18n="optionsAdd">Add</button>
+      </form>
+    </section>
+
+    <h2 class="section-title" id="viewer-heading" data-i18n="optionsViewerHeading">Viewer keys</h2>
+    <section class="card keys" aria-labelledby="viewer-heading">
+      <div class="row"><span class="label" data-i18n="optionsKeyRotate"></span><span class="row-value"><kbd>R</kbd>, <kbd>Shift</kbd>+<kbd>R</kbd></span></div>
+      <div class="row"><span class="label" data-i18n="optionsKeyFlip"></span><span class="row-value"><kbd>H</kbd>, <kbd>V</kbd></span></div>
+      <div class="row"><span class="label" data-i18n="optionsKeyZoom"></span><span class="row-value"><kbd>−</kbd>, <kbd>+</kbd>, <kbd>F</kbd>, <kbd>1</kbd></span></div>
+      <div class="row"><span class="label" data-i18n="optionsKeyReset"></span><span class="row-value"><kbd>0</kbd></span></div>
+    </section>
+
+    <!-- Copies chrome://settings/help ("About Chrome"); links come from about-links.js. -->
+    <h2 class="section-title" id="about-heading" data-i18n="optionsAboutHeading">About Upright</h2>
+    <section class="card" aria-labelledby="about-heading">
+      <div class="row two-line about-product">
+        <img src="icons/icon-128.png" width="32" height="32" alt="">
+        <span class="label product-title" data-i18n="extShortName">Upright</span>
+      </div>
+      <div class="row">
+        <span class="label"><span id="version" class="secondary"></span></span>
+      </div>
+      <a id="help" class="link-row external" target="_blank" rel="noopener">
+        <span class="label" data-i18n="optionsGetHelp">Get help with Upright</span>
+      </a>
+      <a id="report-issue" class="link-row external">
+        <span class="label" data-i18n="optionsReportIssue">Report an issue</span>
+      </a>
+      <a id="privacy-policy" class="link-row external" target="_blank" rel="noopener">
+        <span class="label" data-i18n="optionsPrivacyPolicy">Privacy policy</span>
+      </a>
+    </section>
+  </main>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

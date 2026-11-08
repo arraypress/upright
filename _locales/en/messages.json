@@ -1,0 +1,231 @@
+{
+  "extName": {
+    "message": "Upright – Rotate Images & Videos"
+  },
+  "extDescription": {
+    "message": "Turn sideways images and videos upright from the right-click menu: rotate or flip them in place, or open them rotated in a new tab."
+  },
+  "menuRotate": {
+    "message": "Rotate"
+  },
+  "menuRotateRight": {
+    "message": "Rotate clockwise"
+  },
+  "menuRotateLeft": {
+    "message": "Rotate counterclockwise"
+  },
+  "menuRotate180": {
+    "message": "Rotate 180°"
+  },
+  "menuFlipHorizontal": {
+    "message": "Flip horizontally"
+  },
+  "menuFlipVertical": {
+    "message": "Flip vertically"
+  },
+  "menuReset": {
+    "message": "Reset"
+  },
+  "menuOpenInNewTab": {
+    "message": "Open in new tab"
+  },
+  "viewerTitle": {
+    "message": "Upright"
+  },
+  "viewerRotateLeft": {
+    "message": "Rotate counterclockwise (Shift+R)"
+  },
+  "viewerRotateRight": {
+    "message": "Rotate clockwise (R)"
+  },
+  "viewerFlipHorizontal": {
+    "message": "Flip horizontally (H)"
+  },
+  "viewerFlipVertical": {
+    "message": "Flip vertically (V)"
+  },
+  "viewerZoomOut": {
+    "message": "Zoom out (−)"
+  },
+  "viewerZoomIn": {
+    "message": "Zoom in (+)"
+  },
+  "viewerFit": {
+    "message": "Fit to window (F)"
+  },
+  "viewerActualSize": {
+    "message": "Actual size (1)"
+  },
+  "viewerReset": {
+    "message": "Reset (0)"
+  },
+  "viewerSave": {
+    "message": "Save rotated copy"
+  },
+  "viewerSaveBlocked": {
+    "message": "Can’t save a copy: this site doesn’t let other pages read the image’s pixels. Use Save image as… on the page instead."
+  },
+  "viewerSaveVideo": {
+    "message": "Videos can’t be saved rotated"
+  },
+  "viewerNoSource": {
+    "message": "Nothing to show: right-click an image or video and choose Rotate › Open in new tab."
+  },
+  "viewerLoadFailed": {
+    "message": "This can’t be shown outside its page. Some sites only stream media to their own pages."
+  },
+  "menuRotateImage": {
+    "message": "Rotate image"
+  },
+  "menuRotateVideo": {
+    "message": "Rotate video"
+  },
+  "optionsTitle": {
+    "message": "Upright settings"
+  },
+  "optionsSaved": {
+    "message": "Saved"
+  },
+  "optionsMenuHeading": {
+    "message": "Right-click menu"
+  },
+  "optionsStyleSingle": {
+    "message": "One item"
+  },
+  "optionsStyleSingleSub": {
+    "message": "“Rotate image”: each click turns it a quarter turn"
+  },
+  "optionsStyleFull": {
+    "message": "Full menu"
+  },
+  "optionsStyleFullSub": {
+    "message": "“Rotate ▸” with every turn and flip, Reset and Open in new tab"
+  },
+  "optionsDirection": {
+    "message": "With one item, a click"
+  },
+  "optionsDirectionRight": {
+    "message": "Rotates clockwise"
+  },
+  "optionsDirectionLeft": {
+    "message": "Rotates counterclockwise"
+  },
+  "optionsSingleHint": {
+    "message": "With one item, keep clicking to keep turning: four clicks is upright again. For flips and zoom, point at it and press $VIEWER$ to open it in a new tab; $RESET$ resets it. Or choose Full menu to have everything on the right-click menu.",
+    "placeholders": {
+      "viewer": {
+        "content": "$1"
+      },
+      "reset": {
+        "content": "$2"
+      }
+    }
+  },
+  "optionsViewerHeading": {
+    "message": "Viewer keys"
+  },
+  "optionsKeyRotate": {
+    "message": "Rotate clockwise / counterclockwise"
+  },
+  "optionsKeyFlip": {
+    "message": "Flip horizontally / vertically"
+  },
+  "optionsKeyZoom": {
+    "message": "Zoom out / in, fit, actual size"
+  },
+  "optionsKeyReset": {
+    "message": "Reset"
+  },
+  "commandRotateRight": {
+    "message": "Rotate the image under the pointer clockwise"
+  },
+  "commandRotateLeft": {
+    "message": "Rotate the image under the pointer counterclockwise"
+  },
+  "commandReset": {
+    "message": "Reset the image under the pointer"
+  },
+  "optionsShortcutsHeading": {
+    "message": "Keyboard shortcuts"
+  },
+  "optionsShortcutsHint": {
+    "message": "Point at an image or video and press the shortcut."
+  },
+  "optionsShortcutNotSet": {
+    "message": "Not set"
+  },
+  "optionsNoShortcuts": {
+    "message": "None set yet. Add them on Chrome’s Keyboard shortcuts page."
+  },
+  "optionsSingleKey": {
+    "message": "Single-key mode"
+  },
+  "optionsSingleKeySub": {
+    "message": "Point at an image or video and press R (clockwise), L (counterclockwise) or 0 (reset), with no other key"
+  },
+  "optionsSingleKeyWarning": {
+    "message": "Chrome will warn that this can “read and change your data” on those sites: it’s what lets the key be heard there. Nothing is read or sent."
+  },
+  "optionsScope": {
+    "message": "Where"
+  },
+  "optionsScopeAll": {
+    "message": "All sites"
+  },
+  "optionsScopeChosen": {
+    "message": "Only sites I choose"
+  },
+  "optionsSitePlaceholder": {
+    "message": "example.com"
+  },
+  "optionsAdd": {
+    "message": "Add"
+  },
+  "optionsRemove": {
+    "message": "Remove"
+  },
+  "optionsExtraKeys": {
+    "message": "Extra keys"
+  },
+  "optionsExtraKeysSub": {
+    "message": "H and V flip horizontally and vertically"
+  },
+  "optionsNeverHeading": {
+    "message": "Never on"
+  },
+  "optionsNeverHint": {
+    "message": "Sites whose own keys you’d rather keep. YouTube uses L (forward 10 seconds) and 0 (back to the start) while you point at its player."
+  },
+  "optionsDenied": {
+    "message": "Chrome didn’t grant access, so nothing changed."
+  },
+  "optionsSingleKeySwitch": {
+    "message": "Rotate with one key"
+  },
+  "commandOpenViewer": {
+    "message": "Open the image under the pointer in a new tab, to flip and zoom"
+  },
+  "extShortName": {
+    "message": "Upright"
+  },
+  "optionsAboutHeading": {
+    "message": "About Upright"
+  },
+  "optionsVersion": {
+    "message": "Version $VERSION$",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsGetHelp": {
+    "message": "Get help with Upright"
+  },
+  "optionsReportIssue": {
+    "message": "Report an issue"
+  },
+  "optionsPrivacyPolicy": {
+    "message": "Privacy policy"
+  }
+}

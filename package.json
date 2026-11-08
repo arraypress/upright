@@ -1,0 +1,18 @@
+{
+  "name": "upright",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Chrome extension: rotate and flip sideways images and videos in place, from the right-click menu.",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:e2e": "node scripts/build-e2e.mjs && node test/e2e/rotate.mjs && node test/e2e/toolbar.mjs",
+    "package": "npm test && node scripts/package.mjs"
+  },
+  "author": "ArrayPress Limited",
+  "license": "MIT",
+  "devDependencies": {
+    "playwright": "1.64.0",
+    "vitest": "^5.0.2"
+  }
+}

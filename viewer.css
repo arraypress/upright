@@ -1,0 +1,94 @@
+/* The viewer: chrome-ui.css (the shared kit) gives the tokens and the round
+   icon buttons; this file lays out the bar and the stage. */
+
+:root {
+  --stage: rgb(241 243 244);           /* google-grey-100, behind the media */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root { --stage: rgb(19 19 19); }
+}
+
+html, body { height: 100%; }
+
+/* A column: the toolbar takes what it needs (one row or two), the stage the rest. */
+body {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  background: var(--stage);
+}
+
+.viewer-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--toolbar-height);
+  padding: 4px 12px 4px 20px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 1px rgb(0 0 0 / 0.15);
+  position: relative;
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-secondary);
+}
+
+.buttons { display: flex; align-items: center; gap: 2px; }
+
+.buttons .icon-button { width: auto; min-width: 32px; padding: 0 6px; border-radius: 16px; }
+.icon-button:disabled { opacity: 0.38; }
+.icon-button:focus-visible { outline-offset: -2px; }
+.icon-button svg { width: 20px; height: 20px; fill: currentColor; }
+svg.mirror { transform: scaleX(-1); }
+svg.quarter { transform: rotate(90deg); }
+
+.buttons .zoom { min-width: 56px; font: 500 13px system-ui, sans-serif; font-variant-numeric: tabular-nums; color: var(--text); }
+
+.divider { width: 1px; height: 20px; margin: 0 6px; background: var(--separator); }
+
+/* A disabled button gets no hover events, so its wrapper carries the tooltip. */
+.save-wrap { display: inline-flex; }
+
+/* Grid + margin: auto centres the media, and still scrolls to every edge when it's larger. */
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  overflow: auto;
+  padding: 16px;
+}
+
+.frame { position: relative; margin: auto; }
+
+.frame > img,
+.frame > video {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: none;
+  /* Turned about its own centre; translate first so the centre sits in the frame's. */
+  transform-origin: 50% 50%;
+}
+
+.message {
+  margin: auto;
+  max-width: 420px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 560px) {
+  .viewer-bar { flex-wrap: wrap; gap: 0; padding: 4px 4px 2px; }
+  .name { flex-basis: 100%; padding: 4px 8px; }
+  .buttons { flex-wrap: wrap; }
+  .divider { display: none; }
+  .buttons .icon-button { padding: 0 4px; }
+  .buttons .zoom { min-width: 44px; }
+}

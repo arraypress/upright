@@ -1,0 +1,4 @@
+// Single-key mode's content script. Chrome registers content scripts as classic scripts,
+// so this loads the real code as a module, sharing page.js and transform.js with the
+// menu and shortcuts rather than keeping a copy.
+import(chrome.runtime.getURL('keys.js')).catch((error) => console.debug('Upright keys:', error));
