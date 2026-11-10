@@ -112,36 +112,62 @@ singleKeyScope.addEventListener('change', async () => {
   await releaseExcept(patternsFor(scope));
 });
 
-/** The site lists' words, translated. */
-const words = { remove: t('optionsRemove'), removeLabel: (/** @type {string} */ site) => t('optionsRemoveLabel', [site]) };
+/**
+ * Ask Chrome for a site's access, from the click itself; refused, say so.
+ *
+ * @param {string} origin - The site.
+ * @returns {Promise<boolean>} Whether it's granted.
+ */
+async function askAccess(origin) {
+  const granted = await request([originPattern(origin)]);
+  if (!granted) flash(t('optionsDenied'));
+  return granted;
+}
 
-// The chosen sites: each needs its site access, asked for from the Add click itself.
+/**
+ * The site lists' words, translated. Both lists are as chrome://settings/performance lists the
+ * sites Memory Saver keeps active: “Add” asks for a site in the one-field dialog, each row has a ⋮
+ * menu (Edit, Remove), and “No sites added” shows while there are none. A site added again moves
+ * to the end, once.
+ */
+const words = {
+  add: t('optionsAdd'), addSite: t('optionsAddSite'), editSite: t('optionsEditSite'), edit: t('optionsEdit'),
+  remove: t('optionsRemove'), save: t('optionsSave'), cancel: t('optionsCancel'), site: t('optionsSiteLabel'),
+  invalid: t('optionsSiteInvalid'), moreActions: (/** @type {string} */ site) => t('optionsMoreActions', [site]),
+};
+
+// The chosen sites (origins): each needs its site access, asked for from the dialog's click, and
+// given back when it's removed or edited away.
 const chosenSites = createSiteList({
   list: byId('singleKeySites'),
-  form: byId('add-site', HTMLFormElement),
+  empty: byId('no-chosen-sites'),
+  addButton: byId('add-site'),
   parse: siteOrigin,
   async add(origin) {
-    if (!(await request([originPattern(origin)]))) {
-      flash(t('optionsDenied'));
-      return false;
-    }
-    save({ singleKeySites: [...settings.singleKeySites, origin] });
-    return true;
+    if (await askAccess(origin)) save({ singleKeySites: [...settings.singleKeySites.filter((o) => o !== origin), origin] });
   },
   // Stop single-key mode on the site, and give its access back.
   async remove(origin) {
     save({ singleKeySites: settings.singleKeySites.filter((o) => o !== origin) });
     await releaseExcept(patternsFor(settings.singleKeyScope));
   },
+  async replace(origin, edited) {
+    if (!(await askAccess(edited))) return;
+    save({ singleKeySites: [...new Set(settings.singleKeySites.map((o) => (o === origin ? edited : o)))] });
+    await releaseExcept(patternsFor(settings.singleKeyScope));
+  },
   words,
 });
 
+// “Never on” (hosts): no access needed.
 const neverSites = createSiteList({
   list: byId('neverSites'),
-  form: byId('add-never', HTMLFormElement),
+  empty: byId('no-never-sites'),
+  addButton: byId('add-never'),
   parse: siteHost,
-  add: (host) => save({ neverSites: [...settings.neverSites, host] }),
+  add: (host) => save({ neverSites: [...settings.neverSites.filter((h) => h !== host), host] }),
   remove: (host) => save({ neverSites: settings.neverSites.filter((h) => h !== host) }),
+  replace: (host, edited) => save({ neverSites: [...new Set(settings.neverSites.map((h) => (h === host ? edited : h)))] }),
   words,
 });
 

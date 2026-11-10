@@ -81,11 +81,12 @@
         </select>
       </div>
       <div id="chosen-row" data-needs-keys>
+        <div class="row">
+          <span class="label secondary" data-i18n="optionsChosenHint"></span>
+          <button id="add-site" type="button" data-i18n="optionsAdd">Add</button>
+        </div>
+        <p class="row text" id="no-chosen-sites"><span class="label" data-i18n="optionsNoSites">No sites added</span></p>
         <ul class="list" id="singleKeySites"></ul>
-        <form class="row add" id="add-site">
-          <input type="text" id="site-input" data-i18n-placeholder="optionsSitePlaceholder" autocomplete="off" spellcheck="false">
-          <button type="submit" data-i18n="optionsAdd">Add</button>
-        </form>
       </div>
       <label class="row two-line" data-needs-keys>
         <span class="label">
@@ -98,12 +99,12 @@
 
     <h2 class="section-title" id="never-heading" data-i18n="optionsNeverHeading" data-needs-keys>Never on</h2>
     <section class="card" aria-labelledby="never-heading" data-needs-keys>
-      <p class="row text"><span class="label" data-i18n="optionsNeverHint"></span></p>
+      <div class="row">
+        <span class="label secondary" data-i18n="optionsNeverHint"></span>
+        <button id="add-never" type="button" data-i18n="optionsAdd">Add</button>
+      </div>
+      <p class="row text" id="no-never-sites"><span class="label" data-i18n="optionsNoSites">No sites added</span></p>
       <ul class="list" id="neverSites"></ul>
-      <form class="row add" id="add-never">
-        <input type="text" id="never-input" data-i18n-placeholder="optionsSitePlaceholder" autocomplete="off" spellcheck="false">
-        <button type="submit" data-i18n="optionsAdd">Add</button>
-      </form>
     </section>
 
     <h2 class="section-title" id="viewer-heading" data-i18n="optionsViewerHeading">Viewer keys</h2>

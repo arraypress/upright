@@ -175,17 +175,41 @@
   "optionsScopeChosen": {
     "message": "Only sites I choose"
   },
-  "optionsSitePlaceholder": {
-    "message": "example.com"
+  "optionsChosenHint": {
+    "message": "Each site asks for access when you add it."
+  },
+  "optionsNoSites": {
+    "message": "No sites added"
   },
   "optionsAdd": {
     "message": "Add"
   },
+  "optionsAddSite": {
+    "message": "Add site"
+  },
+  "optionsEditSite": {
+    "message": "Edit site"
+  },
+  "optionsEdit": {
+    "message": "Edit"
+  },
   "optionsRemove": {
     "message": "Remove"
   },
-  "optionsRemoveLabel": {
-    "message": "Remove “$SITE$”",
+  "optionsSave": {
+    "message": "Save"
+  },
+  "optionsCancel": {
+    "message": "Cancel"
+  },
+  "optionsSiteLabel": {
+    "message": "Site"
+  },
+  "optionsSiteInvalid": {
+    "message": "Enter a site, like example.com"
+  },
+  "optionsMoreActions": {
+    "message": "More actions for $SITE$",
     "placeholders": {
       "site": {
         "content": "$1"

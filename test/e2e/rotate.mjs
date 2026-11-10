@@ -724,21 +724,52 @@ try {
     assert.equal(script.allFrames, true);
   });
 
-  await check('options: the site lists show their sites; “Never on” adds what’s typed as a host and removes it', async () => {
+  await check('options: the chosen sites are added in Chrome’s dialog with their access, and removed from their ⋮ menu', async () => {
     const options = await openOptions();
     assert.deepEqual(await options.locator('#singleKeySites li .label').allInnerTexts(), ['http://127.0.0.1']);
-    await options.locator('#never-input').fill(' https://www.YouTube.com/watch ');
-    await options.locator('#never-input').press('Enter');
-    const remove = options.getByRole('button', { name: 'Remove “youtube.com”' });
-    await remove.waitFor();
-    assert.equal(await options.locator('#never-input').inputValue(), '');
-    await until(async () => JSON.stringify((await stored()).sync.neverSites) === '["youtube.com"]', 'the site to reach sync');
-    await options.locator('#never-input').fill('not a site');
-    await options.locator('#never-input').press('Enter');
+    assert.equal(await options.isVisible('#no-chosen-sites'), false);
+    await options.getByRole('button', { name: 'More actions for http://127.0.0.1' }).click();
+    await options.getByRole('menuitem', { name: 'Remove' }).click();
+    await options.waitForSelector('#no-chosen-sites:not([hidden])');
+    await until(async () => JSON.stringify((await stored()).local.singleKeySites) === '[]', 'the removal to be kept');
+    // Access is asked for from the dialog's Add (the e2e build already holds 127.0.0.1).
+    await options.click('#add-site');
+    await options.fill('#text-dialog-input', 'http://127.0.0.1/page');
+    await options.press('#text-dialog-input', 'Enter');
+    await until(async () => JSON.stringify((await stored()).local.singleKeySites) === '["http://127.0.0.1"]', 'the site to be kept');
+    // Edited from its ⋮ menu: the new site's access is asked for from the dialog's Save. (localhost
+    // stands for a site whose access was taken back.)
+    await setSettings({ singleKeySites: ['http://localhost', 'http://127.0.0.1'] });
+    await options.getByRole('button', { name: 'More actions for http://localhost' }).click();
+    await options.getByRole('menuitem', { name: 'Edit' }).click();
+    await options.fill('#text-dialog-input', 'http://127.0.0.1');
+    await options.press('#text-dialog-input', 'Enter');
+    await until(async () => JSON.stringify((await stored()).local.singleKeySites) === '["http://127.0.0.1"]', 'the edit to be kept');
+    assert.deepEqual(await options.locator('#singleKeySites li .label').allInnerTexts(), ['http://127.0.0.1']);
+    await options.close();
+  });
+
+  await check('options: “Never on” adds what’s typed in Chrome’s dialog as a host, edits and removes it from its ⋮ menu', async () => {
+    const options = await openOptions();
+    const neverSites = async () => JSON.stringify((await stored()).sync.neverSites);
+    assert.equal(await options.isVisible('#no-never-sites'), true);
+    await options.click('#add-never');
+    await options.fill('#text-dialog-input', 'not a site');
+    assert.equal(await options.isDisabled('#text-dialog-confirm'), true);
+    await options.fill('#text-dialog-input', ' https://www.YouTube.com/watch ');
+    await options.press('#text-dialog-input', 'Enter');
+    await until(async () => (await neverSites()) === '["youtube.com"]', 'the site to reach sync');
     assert.deepEqual(await options.locator('#neverSites li .label').allInnerTexts(), ['youtube.com']);
-    await remove.click();
-    assert.equal(await options.locator('#neverSites li').count(), 0);
-    await until(async () => JSON.stringify((await stored()).sync.neverSites) === '[]', 'the removal to reach sync');
+    assert.equal(await options.isVisible('#no-never-sites'), false);
+    await options.getByRole('button', { name: 'More actions for youtube.com' }).click();
+    await options.getByRole('menuitem', { name: 'Edit' }).click();
+    await options.fill('#text-dialog-input', 'music.youtube.com');
+    await options.press('#text-dialog-input', 'Enter');
+    await until(async () => (await neverSites()) === '["music.youtube.com"]', 'the edit to reach sync');
+    await options.getByRole('button', { name: 'More actions for music.youtube.com' }).click();
+    await options.getByRole('menuitem', { name: 'Remove' }).click();
+    await options.waitForSelector('#no-never-sites:not([hidden])');
+    await until(async () => (await neverSites()) === '[]', 'the removal to reach sync');
     await options.close();
   });
 
