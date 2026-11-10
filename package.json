@@ -6,19 +6,19 @@
   "type": "module",
   "scripts": {
     "postinstall": "extension-kit vendor extension/vendor/extension-kit",
-    "test": "npm run lint && npm run typecheck && vitest run && npm run duplication",
+    "test": "extension-kit vendor-check && npm run lint && npm run typecheck && vitest run && npm run duplication",
     "lint": "eslint .",
     "typecheck": "tsc -p .",
     "duplication": "extension-kit duplication",
     "test:e2e": "node scripts/build-e2e.mjs && node test/e2e/rotate.mjs && node test/e2e/toolbar.mjs",
-    "icons": "node scripts/icons.mjs",
-    "toolbar-icons": "node scripts/toolbar-icons.mjs",
+    "icons": "extension-kit icons",
+    "toolbar-icons": "extension-kit toolbar-icons",
     "package": "npm test && node scripts/package.mjs"
   },
   "author": "ArrayPress Limited",
   "license": "MIT",
   "devDependencies": {
-    "@arraypress/extension-kit": "^1.2.0",
+    "@arraypress/extension-kit": "^1.3.0",
     "@eslint/js": "^10.0.1",
     "@types/chrome": "^0.3.7",
     "@types/node": "^26.6.6",

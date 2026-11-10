@@ -22,7 +22,7 @@
  */
 
 import { createSettingsStore } from '../vendor/extension-kit/settings/store.js';
-import { neverHost, siteOrigin } from './sites.js';
+import { siteHost, siteOrigin } from '../vendor/extension-kit/sites/sites.js';
 
 /**
  * @typedef {object} Settings
@@ -85,7 +85,7 @@ export function normalizeSettings(raw = {}) {
     singleKeyScope: choice('singleKeyScope', ['all', 'chosen']),
     singleKeySites: list(raw.singleKeySites, siteOrigin),
     extraKeys: flag('extraKeys'),
-    neverSites: list(raw.neverSites, neverHost),
+    neverSites: list(raw.neverSites, siteHost),
   };
 }
 

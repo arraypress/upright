@@ -11,10 +11,10 @@
  */
 import { chromium } from 'playwright';
 import { fileURLToPath } from 'node:url';
-import { checkToolbarTheme, launchExtension } from '@arraypress/extension-kit/testing';
+import { checkToolbarTheme, launchExtension, testBuildDir } from '@arraypress/extension-kit/testing';
 import { toolbarIcon } from '../../extension/vendor/extension-kit/index.js';
 
-const build = fileURLToPath(new URL('../../.test-builds/e2e', import.meta.url));
+const build = testBuildDir(fileURLToPath(new URL('../..', import.meta.url)));
 const launched = await launchExtension(chromium, build, { prefix: 'upright-toolbar-' });
 try {
   await checkToolbarTheme(launched, [{ path: 'options/options.html' }, { path: 'viewer/viewer.html' }], {

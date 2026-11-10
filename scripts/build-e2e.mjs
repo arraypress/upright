@@ -1,5 +1,6 @@
 /**
- * Build .test-builds/e2e/: a copy of extension/ plus three things the store build never has.
+ * Build .test-builds/e2e/ (or under $EXTENSION_TEST_BUILDS): a copy of extension/ plus three
+ * things the store build never has.
  *
  * - A test hook: the service worker entry becomes e2e-hook.js, which exposes the menu's
  *   click handler, because Chrome's native context menu can't be clicked headlessly.
@@ -11,23 +12,19 @@
  *
  * @module scripts/build-e2e
  */
-import { cp, readFile, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { buildTestCopy, testBuildDir } from '@arraypress/extension-kit/build';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const extension = path.join(root, 'extension');
 
-// Hidden from Finder: load extension/ itself, not this.
-const out = path.join(root, '.test-builds', 'e2e');
-
-await rm(out, { recursive: true, force: true });
-await cp(extension, out, { recursive: true });
-await cp(path.join(root, 'test/e2e/hook.js'), path.join(out, 'e2e-hook.js'));
-
-const manifest = JSON.parse(await readFile(path.join(out, 'manifest.json'), 'utf8'));
-manifest.background.service_worker = 'e2e-hook.js';
-manifest.host_permissions = ['http://127.0.0.1/*'];
-manifest.permissions.push('webNavigation');
-await writeFile(path.join(out, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
-console.log('Built .test-builds/e2e/');
+const out = await buildTestCopy({
+  from: path.join(root, 'extension'),
+  to: testBuildDir(root),
+  hook: path.join(root, 'test/e2e/hook.js'),
+  manifest: (manifest) => {
+    manifest.host_permissions = ['http://127.0.0.1/*'];
+    manifest.permissions?.push('webNavigation');
+  },
+});
+console.log(`Built ${path.relative(root, out)}/`);

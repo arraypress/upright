@@ -184,6 +184,14 @@
   "optionsRemove": {
     "message": "Remove"
   },
+  "optionsRemoveLabel": {
+    "message": "Remove “$SITE$”",
+    "placeholders": {
+      "site": {
+        "content": "$1"
+      }
+    }
+  },
   "optionsExtraKeys": {
     "message": "Extra keys"
   },

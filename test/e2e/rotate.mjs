@@ -17,7 +17,7 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import assert from 'node:assert/strict';
-import { checkRunner, launchExtension, until } from '@arraypress/extension-kit/testing';
+import { checkRunner, launchExtension, testBuildDir, until } from '@arraypress/extension-kit/testing';
 import { settingsStore } from '../../extension/shared/settings.js';
 import { ABOUT_LINKS } from '../../extension/options/about-links.js';
 import { listenLocally } from '../../scripts/local-server.mjs';
@@ -27,7 +27,7 @@ import { testHook } from './hook-client.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.dirname(path.dirname(here));
-const extensionPath = path.join(root, '.test-builds', 'e2e');
+const extensionPath = testBuildDir(root);
 const shots = process.env.ROTATE_SHOTS;
 /**
  * @param {string} name - A file in fixtures/.
@@ -722,6 +722,24 @@ try {
     const [script] = await until(async () => ((await registered()).length ? registered() : null), 'the registration');
     assert.deepEqual(script.matches, ['http://127.0.0.1/*']);
     assert.equal(script.allFrames, true);
+  });
+
+  await check('options: the site lists show their sites; “Never on” adds what’s typed as a host and removes it', async () => {
+    const options = await openOptions();
+    assert.deepEqual(await options.locator('#singleKeySites li .label').allInnerTexts(), ['http://127.0.0.1']);
+    await options.locator('#never-input').fill(' https://www.YouTube.com/watch ');
+    await options.locator('#never-input').press('Enter');
+    const remove = options.getByRole('button', { name: 'Remove “youtube.com”' });
+    await remove.waitFor();
+    assert.equal(await options.locator('#never-input').inputValue(), '');
+    await until(async () => JSON.stringify((await stored()).sync.neverSites) === '["youtube.com"]', 'the site to reach sync');
+    await options.locator('#never-input').fill('not a site');
+    await options.locator('#never-input').press('Enter');
+    assert.deepEqual(await options.locator('#neverSites li .label').allInnerTexts(), ['youtube.com']);
+    await remove.click();
+    assert.equal(await options.locator('#neverSites li').count(), 0);
+    await until(async () => JSON.stringify((await stored()).sync.neverSites) === '[]', 'the removal to reach sync');
+    await options.close();
   });
 
   await load();

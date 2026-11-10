@@ -8,5 +8,3 @@
 
 /* Keys read as plain text, like chrome://extensions/shortcuts. */
 kbd { font: inherit; }
-
-.add input { flex: 1; min-width: 0; }

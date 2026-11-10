@@ -8,16 +8,11 @@
 import { readViewerUrl, viewerUrl } from '../shared/rotate.js';
 import { IDENTITY_STATE, step } from '../shared/transform.js';
 import { copyFile, fitZoom, mediaName, nextZoom, turnedSize } from './viewer-math.js';
-import { byId, localize, translator, watchColorScheme } from '../vendor/extension-kit/index.js';
+import { byId, setUpPage } from '../vendor/extension-kit/index.js';
 
 /** @import { Point } from '../shared/transform.js' */
 
-const message = translator(chrome.i18n);
-
-// The toolbar glyph follows this page's light or dark scheme.
-watchColorScheme(chrome).catch((error) => console.debug('Reporting the colour scheme:', error));
-
-localize(document, chrome.i18n);
+const message = setUpPage(chrome);
 
 const { src, kind } = readViewerUrl(location.search);
 let { state } = readViewerUrl(location.search);

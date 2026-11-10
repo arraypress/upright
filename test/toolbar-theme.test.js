@@ -27,10 +27,10 @@ test('manifest starts on the light glyph, keeps its brand icons, asks for offscr
   expect(existsSync(new URL(OFFSCREEN_PATH, root))).toBe(true);
 });
 
-test('the worker starts the theme, the offscreen document watches, both pages report', () => {
+test('the worker starts the theme, the offscreen document watches, both pages report (setUpPage)', () => {
   expect(read('background/background.js')).toMatch(/startToolbarTheme\(chrome\)/);
   expect(read('offscreen/offscreen.js')).toMatch(/watchSchemeOffscreen\(chrome\.runtime\)/);
-  for (const page of ['options/options.js', 'viewer/viewer.js']) expect(read(page), page).toMatch(/watchColorScheme\(chrome\)/);
+  for (const page of ['options/options.js', 'viewer/viewer.js']) expect(read(page), page).toMatch(/setUpPage\(chrome[,)]/);
   // The toolbar button opens settings, as there's no popup.
   expect(read('background/background.js')).toMatch(/action\.onClicked\.addListener\(\(\) => chrome\.runtime\.openOptionsPage\(\)\)/);
 });

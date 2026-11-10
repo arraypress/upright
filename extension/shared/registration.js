@@ -6,7 +6,7 @@
  * @module shared/registration
  */
 import { settingsStore } from './settings.js';
-import { neverPatterns, originPattern } from './sites.js';
+import { hostPatterns, originPattern } from '../vendor/extension-kit/index.js';
 
 /** @import { Settings } from './settings.js' */
 
@@ -29,7 +29,7 @@ export const ALL_SITES = /** @type {readonly string[]} */ (Object.freeze(['https
  */
 export async function resolveMatches(settings, isGranted) {
   if (!settings.singleKey) return { matches: [], excludeMatches: [] };
-  const excludeMatches = settings.neverSites.flatMap(neverPatterns);
+  const excludeMatches = settings.neverSites.flatMap(hostPatterns);
   /** @type {string[]} */
   const matches = [];
   if (settings.singleKeyScope === 'all') {

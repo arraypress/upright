@@ -22,12 +22,13 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { H, THEMES, W, WIN, canvas, cursor, geometry, letterIcon, windowChrome } from './frame.mjs';
+import { storeFrame, testBuildDir } from '@arraypress/extension-kit/build';
 import { listenLocally } from '../../scripts/local-server.mjs';
 import { testHook } from '../../test/e2e/hook-client.mjs';
 
 /** @import { Page } from 'playwright' */
-/** @import { Tab } from './frame.mjs' */
+const { H, THEMES, W, WIN, canvas, cursor, geometry, letterIcon, windowChrome } = storeFrame;
+/** @typedef {Parameters<typeof windowChrome>[0]['tabs'][number]} Tab */
 
 const ZOOMED = geometry(1.2);
 const tools = path.dirname(fileURLToPath(import.meta.url));
@@ -43,7 +44,7 @@ const dataUrl = async (file, type = 'image/png') => `data:${type};base64,${(awai
 const EXT_ICON = await dataUrl(path.join(root, 'extension', 'icons', 'icon-32.png'));
 
 execFileSync(process.execPath, [path.join(root, 'scripts', 'build-e2e.mjs')], { stdio: 'inherit' });
-const extensionPath = path.join(root, '.test-builds', 'e2e');
+const extensionPath = testBuildDir(root);
 
 // ---------------------------------------------------------------- made-up pages
 

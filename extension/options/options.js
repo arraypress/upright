@@ -9,29 +9,21 @@
  */
 
 import {
-  byId, createSettingsSaver, localize, setAboutLinks, setShortcuts, statusFlasher, translator, valueRow, watchColorScheme,
+  byId, createSettingsSaver, createSiteList, originPattern, setAboutLinks, setShortcuts, setUpPage, siteHost, siteOrigin,
+  statusFlasher, valueRow,
 } from '../vendor/extension-kit/index.js';
 import { ABOUT_LINKS } from './about-links.js';
 import { ALL_SITES } from '../shared/registration.js';
 import { normalizeSettings, settingsStore } from '../shared/settings.js';
-import { neverHost, originPattern, siteOrigin } from '../shared/sites.js';
 
 /** @import { Settings } from '../shared/settings.js' */
 
-const t = translator(chrome.i18n);
+const t = setUpPage(chrome, { title: 'optionsTitle' });
 const singleDirection = byId('singleDirection', HTMLSelectElement);
 const singleKey = byId('singleKey', HTMLInputElement);
 const singleKeyScope = byId('singleKeyScope', HTMLSelectElement);
 const extraKeys = byId('extraKeys', HTMLInputElement);
-const siteInput = byId('site-input', HTMLInputElement);
-const neverInput = byId('never-input', HTMLInputElement);
 const menuStyles = [...document.querySelectorAll('input[name="menuStyle"]')].filter((input) => input instanceof HTMLInputElement);
-
-// The toolbar glyph follows this page's light or dark scheme.
-watchColorScheme(chrome).catch((error) => console.debug('Reporting the colour scheme:', error));
-
-localize(document, chrome.i18n);
-document.title = t('optionsTitle');
 
 let settings = await settingsStore.load(chrome.storage);
 const flash = statusFlasher(byId('status'), 2500);
@@ -48,29 +40,6 @@ function save(changes) {
   show();
 }
 
-/**
- * Fill a list of sites, each with a Remove button.
- *
- * @param {HTMLElement} list - The `<ul class="list">`.
- * @param {readonly string[]} items - Origins or hosts.
- * @param {(item: string) => void} onRemove - Called with the item whose Remove was clicked.
- */
-function siteList(list, items, onRemove) {
-  list.replaceChildren(...items.map((item) => {
-    const li = document.createElement('li');
-    li.className = 'row';
-    const name = document.createElement('span');
-    name.className = 'label';
-    name.textContent = item.replace(/^https:\/\//, '');
-    const remove = document.createElement('button');
-    remove.type = 'button';
-    remove.textContent = t('optionsRemove');
-    remove.addEventListener('click', () => onRemove(item));
-    li.append(name, remove);
-    return li;
-  }));
-}
-
 /** Show `settings`: every control, and the rows that only make sense with single-key mode on. */
 function show() {
   for (const radio of menuStyles) radio.checked = radio.value === settings.menuStyle;
@@ -83,8 +52,8 @@ function show() {
   extraKeys.checked = settings.extraKeys;
   for (const row of document.querySelectorAll('[data-needs-keys]')) if (row instanceof HTMLElement) row.hidden = !settings.singleKey;
   byId('chosen-row').hidden = !settings.singleKey || settings.singleKeyScope !== 'chosen';
-  siteList(byId('singleKeySites'), settings.singleKeySites, removeSite);
-  siteList(byId('neverSites'), settings.neverSites, (host) => save({ neverSites: settings.neverSites.filter((h) => h !== host) }));
+  chosenSites.render(settings.singleKeySites);
+  neverSites.render(settings.neverSites);
 }
 
 // --- Permissions: asked for from the click itself, as Chrome requires; nothing at install. ---
@@ -143,34 +112,37 @@ singleKeyScope.addEventListener('change', async () => {
   await releaseExcept(patternsFor(scope));
 });
 
-byId('add-site').addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const origin = siteOrigin(siteInput.value);
-  if (!origin) return;
-  if (!(await request([originPattern(origin)]))) {
-    flash(t('optionsDenied'));
-    return;
-  }
-  siteInput.value = '';
-  save({ singleKeySites: [...settings.singleKeySites, origin] });
+/** The site lists' words, translated. */
+const words = { remove: t('optionsRemove'), removeLabel: (/** @type {string} */ site) => t('optionsRemoveLabel', [site]) };
+
+// The chosen sites: each needs its site access, asked for from the Add click itself.
+const chosenSites = createSiteList({
+  list: byId('singleKeySites'),
+  form: byId('add-site', HTMLFormElement),
+  parse: siteOrigin,
+  async add(origin) {
+    if (!(await request([originPattern(origin)]))) {
+      flash(t('optionsDenied'));
+      return false;
+    }
+    save({ singleKeySites: [...settings.singleKeySites, origin] });
+    return true;
+  },
+  // Stop single-key mode on the site, and give its access back.
+  async remove(origin) {
+    save({ singleKeySites: settings.singleKeySites.filter((o) => o !== origin) });
+    await releaseExcept(patternsFor(settings.singleKeyScope));
+  },
+  words,
 });
 
-/**
- * Stop single-key mode on a chosen site, and give its access back.
- *
- * @param {string} origin - The site's origin.
- */
-async function removeSite(origin) {
-  save({ singleKeySites: settings.singleKeySites.filter((o) => o !== origin) });
-  await releaseExcept(patternsFor(settings.singleKeyScope));
-}
-
-byId('add-never').addEventListener('submit', (event) => {
-  event.preventDefault();
-  const host = neverHost(neverInput.value);
-  if (!host) return;
-  neverInput.value = '';
-  save({ neverSites: [...settings.neverSites, host] });
+const neverSites = createSiteList({
+  list: byId('neverSites'),
+  form: byId('add-never', HTMLFormElement),
+  parse: siteHost,
+  add: (host) => save({ neverSites: [...settings.neverSites, host] }),
+  remove: (host) => save({ neverSites: settings.neverSites.filter((h) => h !== host) }),
+  words,
 });
 
 extraKeys.addEventListener('change', () => save({ extraKeys: extraKeys.checked }));

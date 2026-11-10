@@ -1,5 +1,5 @@
 /**
- * The right-click menu, the manifest, settings and sites, single-key registration, and the
+ * The right-click menu, the manifest, settings, single-key registration, and the
  * viewer's address, zoom and saved-copy names.
  *
  * @module test/menu-viewer
@@ -9,7 +9,6 @@ import { readFileSync } from 'node:fs';
 import { actionFor, menuItems, OPEN_ID, PARENT_ID } from '../extension/background/menu.js';
 import { ALL_SITES, resolveMatches } from '../extension/shared/registration.js';
 import { DEFAULTS, normalizeSettings } from '../extension/shared/settings.js';
-import { neverPatterns, originPattern, siteOrigin } from '../extension/shared/sites.js';
 import { readViewerUrl, viewerUrl } from '../extension/shared/rotate.js';
 import { ACTIONS } from '../extension/shared/transform.js';
 import { copyFile, fitZoom, mediaName, nextZoom } from '../extension/viewer/viewer-math.js';
@@ -86,17 +85,10 @@ describe('manifest', () => {
   });
 });
 
-describe('settings and sites', () => {
+describe('settings', () => {
   test('anything stored is coerced to valid settings', () => {
     expect(normalizeSettings({ menuStyle: 'huge', singleKey: 'yes', singleKeySites: ['Example.com/x', 'nope', 3], neverSites: ['https://www.YouTube.com/watch', 'youtube.com'] }))
       .toEqual({ ...DEFAULTS, singleKeySites: ['https://example.com'], neverSites: ['youtube.com'] });
-  });
-
-  test('typed sites become origins, patterns and never-on exclusions', () => {
-    expect(siteOrigin('http://127.0.0.1:8080/page')).toBe('http://127.0.0.1');
-    expect(siteOrigin('ftp://x.com')).toBeNull();
-    expect(originPattern('https://example.com')).toBe('https://example.com/*');
-    expect(neverPatterns('youtube.com')).toEqual(['*://youtube.com/*', '*://*.youtube.com/*']);
   });
 });
 
