@@ -659,6 +659,7 @@ try {
     // The one-item hint names the viewer and reset shortcuts as they're set.
     assert.match(text, /press (Alt\+Shift\+V|⌥⇧V) to open it in a new tab; (Alt\+Shift\+0|⌥⇧0) resets it/);
     assert.match(await options.title(), /^Upright settings$/);
+    assert.equal(await worker.evaluate(() => chrome.action.getTitle({})), 'Upright', 'the toolbar button’s tooltip');
     assert.ok(!/(options|command)[A-Z]/.test(text), 'no unlocalised message names');
     // Settings always sync now: there's no switch for it.
     assert.equal(await options.locator('#syncSettings').count(), 0);

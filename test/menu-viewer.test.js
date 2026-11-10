@@ -6,6 +6,7 @@
  */
 import { describe, expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { SITE_LIST_MESSAGES } from '@arraypress/extension-kit';
 import { actionFor, menuItems, OPEN_ID, PARENT_ID } from '../extension/background/menu.js';
 import { ALL_SITES, resolveMatches } from '../extension/shared/registration.js';
 import { DEFAULTS, normalizeSettings } from '../extension/shared/settings.js';
@@ -17,7 +18,7 @@ import { copyFile, fitZoom, mediaName, nextZoom } from '../extension/viewer/view
 
 /**
  * @param {string} name - A locale folder, e.g. "en_GB".
- * @returns {Record<string, { message: string }>} Its messages.json.
+ * @returns {Record<string, { message: string, placeholders?: Record<string, { content: string }> }>} Its messages.json.
  */
 const locale = (name) => JSON.parse(readFileSync(new URL(`../extension/_locales/${name}/messages.json`, import.meta.url), 'utf8'));
 const en = locale('en');
@@ -60,10 +61,18 @@ describe('menu', () => {
       .map((file) => readFileSync(new URL(`../extension/${file}`, import.meta.url), 'utf8')).join('\n');
     const used = new Set([...sources.matchAll(/['"_]((?:menu|viewer|ext|options|command)[A-Z][A-Za-z0-9]+)/g)].map((m) => m[1])
       .filter((name) => !(name in DEFAULTS))); // Setting names, like menuStyle, aren't messages.
+    // The site lists' words (Add buttons' lists: no Remove label), which the kit reads.
+    for (const key of Object.values(SITE_LIST_MESSAGES).filter((key) => key !== SITE_LIST_MESSAGES.removeLabel)) used.add(key);
     expect(used.size).toBeGreaterThan(40);
     for (const name of used) expect(en, name).toHaveProperty(name);
     for (const name of Object.keys(locale('en_GB'))) expect(en, name).toHaveProperty(name);
     expect(locale('en_GB').menuRotateLeft.message).toBe('Rotate anti-clockwise');
+  });
+
+  test('the name is in one place, extShortName (and the store name); other messages take it as $NAME$', () => {
+    const naming = Object.keys(en).filter((key) => en[key].message.includes(en.extShortName.message));
+    expect(naming.sort()).toEqual(['extName', 'extShortName']);
+    for (const key of ['optionsTitle', 'optionsAboutHeading', 'optionsGetHelp']) expect(en[key].placeholders, key).toEqual({ name: { content: '$1' } });
   });
 });
 
@@ -81,6 +90,8 @@ describe('manifest', () => {
     expect(en.extName.message).toBe('Upright – Rotate Images & Videos');
     expect(en.extShortName.message).toBe('Upright');
     expect(manifest.short_name).toBe('__MSG_extShortName__');
+    // The manifest can't fill a placeholder: the toolbar button's tooltip is the name itself, as Chrome's default.
+    expect(manifest.action.default_title).toBe('__MSG_extShortName__');
     expect(manifest.host_permissions).toBeUndefined();
   });
 });

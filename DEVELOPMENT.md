@@ -61,4 +61,5 @@ The same rules as Tabby's (`../tabby/CLAUDE.md`, "Wording") and More Tab Actions
 - Sentence case everywhere ("Rotate image", "Keyboard shortcuts"); the store name "Upright – Rotate Images & Videos" is the one exception.
 - Curly quotes and apostrophes (“ ” ’) and "…" (U+2026); no exclamation marks.
 - The options page is the extension's only page, so it keeps its name in the title: "Upright settings" (Tabby, with several pages, calls its own just "Settings").
+- The name is in one place, `extShortName` (and the store name, `extName`): other messages take it as `$NAME$` (content `$1`), which the kit's `t` and `data-i18n` fill in. The toolbar button's tooltip is just the name (`__MSG_extShortName__`), as the manifest can't fill a placeholder.
 - `en_GB` overrides only the words that differ ("anti-clockwise"); change it in step with `en`.

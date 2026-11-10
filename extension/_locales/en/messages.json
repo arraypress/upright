@@ -29,9 +29,6 @@
   "menuOpenInNewTab": {
     "message": "Open in new tab"
   },
-  "viewerTitle": {
-    "message": "Upright"
-  },
   "viewerRotateLeft": {
     "message": "Rotate counterclockwise (Shift+R)"
   },
@@ -81,7 +78,12 @@
     "message": "Rotate video"
   },
   "optionsTitle": {
-    "message": "Upright settings"
+    "message": "$NAME$ settings",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
   },
   "optionsSaved": {
     "message": "Saved"
@@ -241,7 +243,12 @@
     "message": "Upright"
   },
   "optionsAboutHeading": {
-    "message": "About Upright"
+    "message": "About $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
   },
   "optionsVersion": {
     "message": "Version $VERSION$",
@@ -252,7 +259,12 @@
     }
   },
   "optionsGetHelp": {
-    "message": "Get help with Upright"
+    "message": "Get help with $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
   },
   "optionsReportIssue": {
     "message": "Report an issue"

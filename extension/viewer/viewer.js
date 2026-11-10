@@ -241,7 +241,7 @@ function load() {
   if (!src) return showMessage('viewerNoSource');
   const name = mediaName(src);
   byId('name').textContent = name || src.slice(0, 80);
-  document.title = name || message('viewerTitle');
+  document.title = name || message('extShortName');
 
   media = createMedia();
   media.addEventListener('error', () => showMessage('viewerLoadFailed'));
