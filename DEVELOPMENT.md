@@ -55,7 +55,7 @@ The extension is `extension/`: load that folder, and `npm run package` zips exac
 - The About card comes last and copies chrome://settings/help (Chromium's `settings/about_page`): logo and name, “Version …”, then “Get help with Upright”, “Report an issue”, “Privacy policy” as external link rows (the kit's `.about-product` and `.product-title`).
 
 ## Wording (match Chrome's own menus)
-The same rules as Tabby's (`../tabby/CLAUDE.md`, "Wording") and More Tab Actions:
+The same rules as Tabby's (`../tabby/CLAUDE.md`, "Wording") and Better Tab Actions:
 - Copy how Chrome words the equivalent (its context menus, chrome://extensions, chrome://settings, the app menu); don't invent. "Save image as…" and "Open image in new tab" are Chrome's, so ours are "Rotate", "Open in new tab", "Reset".
 - "…" only when the item opens something that asks for more input; never on items that act at once ("Save rotated copy" downloads straight away, so no "…").
 - Sentence case everywhere ("Rotate image", "Keyboard shortcuts"); the store name "Upright – Rotate Images & Videos" is the one exception.
