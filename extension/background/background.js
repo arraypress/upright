@@ -7,9 +7,9 @@
  */
 import { actionFor, menuItems, OPEN_ID } from './menu.js';
 import { mediaUnderPointer, readViewerUrl, rotateInPage, stateInPage, viewerUrl } from '../shared/rotate.js';
-import { syncRegistration } from '../shared/registration.js';
+import { SCRIPT_ID, wantedScript } from '../shared/registration.js';
 import { DEFAULTS, settingsStore } from '../shared/settings.js';
-import { startToolbarTheme } from '../vendor/extension-kit/index.js';
+import { contentScriptSync, startToolbarTheme } from '../vendor/extension-kit/index.js';
 
 /** @import { ViewerMedia } from '../shared/rotate.js' */
 
@@ -150,6 +150,12 @@ export async function handleCommand(command, tab) {
 
 /** Settings that change the menu; the rest change single-key mode's registration. */
 const MENU_KEYS = ['menuStyle', 'singleDirection'];
+
+/** Bring single-key mode's registration in line with the settings and the sites Chrome has granted. */
+const syncRegistration = contentScriptSync(chrome.scripting, SCRIPT_ID, async () => wantedScript(
+  await settingsStore.load(chrome.storage),
+  (origins) => chrome.permissions.contains({ origins }),
+));
 
 /**
  * Bring single-key mode's registration up to date, logging (not throwing) a failure.

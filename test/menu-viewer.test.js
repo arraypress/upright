@@ -1,6 +1,6 @@
 /**
- * The right-click menu, the manifest, settings, single-key registration, and the
- * viewer's address, zoom and saved-copy names.
+ * The right-click menu, the manifest, settings, and the viewer's address, zoom and
+ * saved-copy names (single-key registration: test/registration.test.js).
  *
  * @module test/menu-viewer
  */
@@ -8,13 +8,10 @@ import { describe, expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { SITE_LIST_MESSAGES } from '@arraypress/extension-kit';
 import { actionFor, menuItems, OPEN_ID, PARENT_ID } from '../extension/background/menu.js';
-import { ALL_SITES, resolveMatches } from '../extension/shared/registration.js';
 import { DEFAULTS, normalizeSettings } from '../extension/shared/settings.js';
 import { readViewerUrl, viewerUrl } from '../extension/shared/rotate.js';
 import { ACTIONS } from '../extension/shared/transform.js';
 import { copyFile, fitZoom, mediaName, nextZoom } from '../extension/viewer/viewer-math.js';
-
-/** @import { Settings } from '../extension/shared/settings.js' */
 
 /**
  * @param {string} name - A locale folder, e.g. "en_GB".
@@ -100,34 +97,6 @@ describe('settings', () => {
   test('anything stored is coerced to valid settings', () => {
     expect(normalizeSettings({ menuStyle: 'huge', singleKey: 'yes', singleKeySites: ['Example.com/x', 'nope', 3], neverSites: ['https://www.YouTube.com/watch', 'youtube.com'] }))
       .toEqual({ ...DEFAULTS, singleKeySites: ['https://example.com'], neverSites: ['youtube.com'] });
-  });
-});
-
-describe('single-key registration', () => {
-  /**
-   * isGranted backed by a set of held patterns, as chrome.permissions.contains answers.
-   *
-   * @param {...string} held - Granted patterns.
-   * @returns {(patterns: string[]) => Promise<boolean>} Whether all of `patterns` are held.
-   */
-  const holding = (...held) => async (patterns) => patterns.every((p) => held.includes(p));
-  /** @param {Record<string, unknown>} changes @returns {Settings} Single-key mode on, plus `changes`. */
-  const on = (changes) => normalizeSettings({ singleKey: true, ...changes });
-
-  test('off, or nothing granted: nothing registered', async () => {
-    expect(await resolveMatches(DEFAULTS, holding(...ALL_SITES))).toEqual({ matches: [], excludeMatches: [] });
-    expect((await resolveMatches(on({}), holding())).matches).toEqual([]);
-  });
-
-  test('all sites, minus the never-on list', async () => {
-    expect(await resolveMatches(on({ neverSites: ['youtube.com'] }), holding(...ALL_SITES))).toEqual({
-      matches: [...ALL_SITES], excludeMatches: ['*://youtube.com/*', '*://*.youtube.com/*'],
-    });
-  });
-
-  test('chosen sites: only those still granted (one revoked from chrome://extensions)', async () => {
-    const settings = on({ singleKeyScope: 'chosen', singleKeySites: ['https://a.com', 'https://b.com'] });
-    expect((await resolveMatches(settings, holding('https://a.com/*'))).matches).toEqual(['https://a.com/*']);
   });
 });
 
