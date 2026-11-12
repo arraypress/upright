@@ -11,3 +11,13 @@ First version.
 - Viewer with rotate, flip, zoom and “Save rotated copy” where the site allows it.
 - Settings sync through Chrome Sync; settings page styled like chrome://settings, with an About card.
 - Toolbar icon drawn in Chrome’s own icon colours, light and dark.
+
+Fixed before release (a review of the whole extension):
+
+- Two turns in quick succession (a shortcut pressed twice) build up: turns in a tab now run one
+  after another. The second used to measure the media before the first had turned it, and one
+  of the two was lost.
+- In single-key mode, R, L or 0 pressed over nothing no longer walks the whole page looking for
+  media: the pointer's place is looked at first.
+- The right-click menu is built by the kit's `contextMenuBuilder` (extension kit 1.11.0).
+- A chosen site whose access Chrome refused keeps what was typed in the dialog.

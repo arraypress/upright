@@ -16,6 +16,7 @@ How Upright works inside, for whoever changes it next. The user-facing overview 
 - State lives in the element's `data-rotate-image` attribute, so turns build up.
 - Finding the right-clicked media: `currentSrc` first, then `src`/srcset/`<picture>`/`<source>`/`data-src*`, then the same file in another size or format (CDN variants).
 - No host permissions for the menu or shortcuts: a click or shortcut grants `activeTab`.
+- Turns in a tab run one after another (`shared/rotate.js` `rotateInPage`): each is two round trips (measure, apply), and a second started in between would start from the same measurement. A key over nothing looks only at `:hover`; the page is walked for media (`findMedia`'s `allMedia`) only for a menu click, or a pointer over something that covers media.
 
 ## Files
 The extension is `extension/`: load that folder, and `npm run package` zips exactly its contents (less the icons' SVG sources and `.DS_Store`; `test/package.test.js` checks it). Paths here are inside it. A file's folder is where it runs: `background/` only in the service worker, `content/` only in web pages (single-key mode), `offscreen/`, `options/` and `viewer/` are those pages, and `shared/` is loaded by more than one of them.

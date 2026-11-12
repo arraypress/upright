@@ -172,14 +172,27 @@ export function findMedia(srcUrl) {
     }
   };
 
-  /** @type {Media[]} */
-  const media = [];
-  /** @param {Document | ShadowRoot} root - Where to look, open shadow roots included. */
-  const collect = (root) => {
-    media.push(...[...root.querySelectorAll('img, video')].filter(isMedia));
-    for (const el of root.querySelectorAll('*')) if (el.shadowRoot) collect(el.shadowRoot);
+  /** @type {Media[] | null} */
+  let found = null;
+  /**
+   * Every image and video in the page, open shadow roots included. Looked for only when it's
+   * needed (the whole page is walked): a key pressed over nothing, or over the media itself,
+   * never gets this far.
+   *
+   * @returns {Media[]} The media.
+   */
+  const allMedia = () => {
+    if (found) return found;
+    const media = /** @type {Media[]} */ ([]);
+    /** @param {Document | ShadowRoot} root - Where to look. */
+    const collect = (root) => {
+      media.push(...[...root.querySelectorAll('img, video')].filter(isMedia));
+      for (const el of root.querySelectorAll('*')) if (el.shadowRoot) collect(el.shadowRoot);
+    };
+    collect(document);
+    found = media;
+    return media;
   };
-  collect(document);
 
   /** @param {Element} el @returns {boolean} Whether any of it is in the viewport. */
   const onScreen = (el) => {
@@ -221,7 +234,7 @@ export function findMedia(srcUrl) {
     };
     // Tiny media (icons, avatars) never; and the media must cover a good part of what's
     // hovered, so resting on the page background doesn't pick some image on the page.
-    const covering = media.filter((el) => {
+    const covering = allMedia().filter((el) => {
       const r = el.getBoundingClientRect();
       return r.width >= 32 && r.height >= 32 && overlap(el) >= 0.3 * area(target);
     });
@@ -247,7 +260,7 @@ export function findMedia(srcUrl) {
     /** @type {Media[]} */
     let matches = [];
     for (const tier of tiers) {
-      matches = media.filter(tier);
+      matches = allMedia().filter(tier);
       if (matches.length) break;
     }
     const hovered = matches.filter((el) => el.matches(':hover'));

@@ -136,7 +136,10 @@ const chosenSites = createSiteList({
   addButton: byId('add-site'),
   parse: siteOrigin,
   async add(origin) {
-    if (await askAccess(origin)) save({ singleKeySites: withSite(settings.singleKeySites, origin) });
+    // Refused: nothing is added, and the dialog's field keeps what was typed.
+    if (!(await askAccess(origin))) return false;
+    save({ singleKeySites: withSite(settings.singleKeySites, origin) });
+    return true;
   },
   // Stop single-key mode on the site, and give its access back.
   async remove(origin) {

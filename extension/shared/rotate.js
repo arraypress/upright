@@ -38,7 +38,8 @@ export function updatesFor(found, action) {
 
 /**
  * Apply `action` to media in the page. Two round trips: the page measures, the maths
- * happens here, the page applies.
+ * happens here, the page applies; one turn at a time in a tab, so two in quick succession
+ * (a shortcut pressed twice) build up instead of both starting from the same measurement.
  * - With `srcUrl` (a menu click): the media showing it, in frame `frameId`.
  * - With `srcUrl` null (a shortcut): the media under the pointer, in every frame Chrome
  *   lets us into (activeTab covers the tab's own site).
@@ -52,7 +53,28 @@ export function updatesFor(found, action) {
  * @returns {Promise<{ found: number, state: State }>} How many elements turned, and the state of the first.
  * @throws {Error} If Chrome won't script the page (e.g. a cross-origin frame, or an extension page).
  */
-export async function rotateInPage(scripting, { tabId, frameId = 0, srcUrl, action }) {
+export function rotateInPage(scripting, where) {
+  // One turn at a time in a tab: the page measures, then applies, and a second turn started in
+  // between would measure the media as it was before the first (and lose one of the two).
+  const run = (turns.get(where.tabId) ?? Promise.resolve()).then(() => turnInPage(scripting, where), () => turnInPage(scripting, where));
+  const settled = run.then(() => {}, () => {}).then(() => {
+    if (turns.get(where.tabId) === settled) turns.delete(where.tabId);
+  });
+  turns.set(where.tabId, settled);
+  return run;
+}
+
+/** Each tab's turn under way, so the next waits for it. @type {Map<number, Promise<void>>} */
+const turns = new Map();
+
+/**
+ * One turn: measure in the page, work out the styles here, apply in the page.
+ *
+ * @param {Scripting} scripting - chrome.scripting.
+ * @param {{ tabId: number, frameId?: number, srcUrl: string | null, action: string }} turn - What to turn, and how.
+ * @returns {Promise<{ found: number, state: State }>} How many elements were turned, and the state now.
+ */
+async function turnInPage(scripting, { tabId, frameId = 0, srcUrl, action }) {
   const target = srcUrl === null ? { tabId, allFrames: true } : { tabId, frameIds: [frameId] };
   const results = await scripting.executeScript({ target, func: findMedia, args: [srcUrl] });
   let found = 0;

@@ -9,7 +9,7 @@ import { actionFor, menuItems, OPEN_ID } from './menu.js';
 import { mediaUnderPointer, readViewerUrl, rotateInPage, stateInPage, viewerUrl } from '../shared/rotate.js';
 import { SCRIPT_ID, wantedScript } from '../shared/registration.js';
 import { DEFAULTS, settingsStore } from '../shared/settings.js';
-import { contentScriptSync, startToolbarTheme } from '../vendor/extension-kit/index.js';
+import { contentScriptSync, contextMenuBuilder, startToolbarTheme } from '../vendor/extension-kit/index.js';
 
 /** @import { ViewerMedia } from '../shared/rotate.js' */
 
@@ -20,41 +20,20 @@ import { contentScriptSync, startToolbarTheme } from '../vendor/extension-kit/in
 const message = (name) => chrome.i18n.getMessage(name);
 const VIEWER = chrome.runtime.getURL('viewer/viewer.html');
 
-/**
- * Create one menu item. chrome.contextMenus.create has no promise form, so this wraps
- * its callback; a failure is logged, not thrown, so one bad item can't stop the rest.
- *
- * @param {chrome.contextMenus.CreateProperties} props - The item.
- * @returns {Promise<void>} Resolves once Chrome has made it (or refused).
- */
-function create(props) {
-  return new Promise((resolve) => {
-    chrome.contextMenus.create(props, () => {
-      if (chrome.runtime.lastError) console.error(`Creating "${props.id}":`, chrome.runtime.lastError.message);
-      resolve();
-    });
-  });
-}
-
-/** The last menu rebuild, so the next waits for it. */
-let rebuilding = Promise.resolve();
+/** Builds the right-click menu whole, one build after another (the kit's: no duplicate ids from builds that overlap). */
+const rebuildMenu = contextMenuBuilder(chrome);
 
 /**
- * Rebuild the menu for the current settings. Rebuilds are queued, so a quick run of
- * setting changes can't interleave one rebuild's creates with another's removeAll
- * (which is how duplicate ids would happen).
+ * Rebuild the menu for the current settings.
  *
- * @returns {Promise<void>} Settles once this rebuild is done; errors are logged.
+ * @returns {Promise<void>} Once Chrome has the new menu; a failure is logged, not thrown.
  */
-function buildMenu() {
-  rebuilding = rebuilding
-    .then(async () => {
-      const settings = await settingsStore.load(chrome.storage);
-      await chrome.contextMenus.removeAll();
-      for (const item of menuItems(settings, message)) await create(item);
-    })
-    .catch((error) => console.error('Building the menu:', error));
-  return rebuilding;
+async function buildMenu() {
+  try {
+    await rebuildMenu(menuItems(await settingsStore.load(chrome.storage), message));
+  } catch (error) {
+    console.error('Building the menu:', error);
+  }
 }
 
 /**
