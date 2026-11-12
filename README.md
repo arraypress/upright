@@ -1,7 +1,7 @@
 # Upright – Rotate Images & Videos
 
 Turn sideways photos and phone videos upright, right on the page. Right-click → **Rotate image**,
-or hover and press **Alt+Shift+R**. The page doesn’t jump: the picture turns in its own space.
+or point at it and press a shortcut you choose. The page doesn’t jump: the picture turns in its own space.
 
 ![A sideways photo turned upright on the page](store/screenshot-1.png)
 
@@ -10,11 +10,12 @@ or hover and press **Alt+Shift+R**. The page doesn’t jump: the picture turns i
 - **Right-click menu:** “Rotate image” / “Rotate video”, a quarter turn per click. Or switch to the
   full menu: clockwise, counterclockwise, 180°, flip horizontally, flip vertically, reset, and open
   in a new tab.
-- **Shortcuts** for whatever is under the pointer (change them at `chrome://extensions/shortcuts`):
-  - **Alt+Shift+R**: rotate clockwise
-  - **Alt+Shift+L**: rotate counterclockwise
-  - **Alt+Shift+0**: reset
-  - **Alt+Shift+V**: open it in the viewer
+- **Shortcuts** for whatever is under the pointer. None are set when you install it: choose your own
+  at `chrome://extensions/shortcuts` (the settings page links there, and lists the ones you’ve set):
+  - rotate clockwise
+  - rotate counterclockwise
+  - reset
+  - open it in the viewer
 - **Single-key mode** (off by default): hover and press **R**, **L** or **0**, on all sites or only the
   ones you choose. Never while you’re typing.
 - **Viewer:** a full-window view with rotate, flip and zoom, and “Save rotated copy” where the site

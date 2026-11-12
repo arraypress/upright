@@ -26,7 +26,7 @@ RIGHT-CLICK MENU
 • Or the full menu: Rotate clockwise, Rotate counterclockwise, Rotate 180°, Flip horizontally, Flip vertically, Reset, and Open in new tab.
 
 KEYBOARD
-• Point at an image or video and press Alt+Shift+R (clockwise), Alt+Shift+L (counterclockwise) or Alt+Shift+0 (reset), or Alt+Shift+V to open it in a new tab to flip and zoom. On a Mac, Alt is the Option key (⌥). Change them at chrome://extensions/shortcuts.
+• Or point at an image or video and press a keyboard shortcut: rotate clockwise, rotate counterclockwise, reset, or open it in a new tab to flip and zoom. Choose your own keys at chrome://extensions/shortcuts (none are set when you install it).
 • Single-key mode (optional): just press R, L or 0 while pointing. Off until you switch it on, for all sites or only the ones you choose, and never while you’re typing.
 
 IN A NEW TAB
@@ -49,7 +49,7 @@ Rotates and flips images and videos on web pages, in place or in a viewer tab, w
 English (also en_GB wording: "anti-clockwise").
 
 **Homepage URL** [OPTIONAL]: an ArrayPress page for the extension, if there is one.
-**Support URL** [OPTIONAL]: the support page or `mailto:` address David chooses.
+**Support URL** [OPTIONAL]: `mailto:support@arraypress.com` (the contact for support and privacy questions, for now; bug reports go to the repo's GitHub Issues).
 
 ## Graphics & Assets
 
@@ -57,7 +57,7 @@ English (also en_GB wording: "anti-clockwise").
 |-------|-----------|--------|----------|
 | Store Icon [REQUIRED] | 128×128 PNG | ✅ Ready | `extension/icons/icon-128.png` (from `extension/icons/icon.svg`) |
 | Screenshot 1 [REQUIRED] | 1280×800 | ✅ Ready | `store/screenshot-1.png`: “Turn sideways photos upright, right on the page”, a post before and after Rotate image |
-| Screenshot 2 | 1280×800 | ✅ Ready | `store/screenshot-2.png`: “Hover and press ⌥⇧R (Alt+Shift+R)”, a gallery photo just turned by the shortcut |
+| Screenshot 2 | 1280×800 | ✅ Ready | `store/screenshot-2.png`: “Or point at it and press a shortcut you choose”, a gallery photo just turned by a shortcut (no keys shown: none ship) |
 | Screenshot 3 | 1280×800 | ✅ Ready | `store/screenshot-3.png`: “Rotate, flip and zoom in the viewer”, the viewer (light) |
 | Screenshot 4 | 1280×800 | ✅ Ready | `store/screenshot-4.png`: “One menu item, or the full menu”, the settings page |
 | Screenshot 5 | 1280×800 | ✅ Ready | `store/screenshot-5.png`: “Open it full-window for a closer look”, the viewer in dark mode, zoomed in |
@@ -66,7 +66,7 @@ English (also en_GB wording: "anti-clockwise").
 
 **How they were made.** `node store/tools/make-screenshots.mjs` regenerates all six.
 - It runs `scripts/build-e2e.mjs` and loads that build in Playwright's Chromium (Playwright 1.64.0 from the Tabby repo). That build is a copy of `extension/` plus the test hook.
-- Chrome's right-click menu and shortcuts can't be driven headlessly, so the script calls exactly what a click on “Rotate image” or a press of ⌥⇧R / ⌥⇧L / ⌥⇧V calls, with the real pointer hovering the photo.
+- Chrome's right-click menu and shortcuts can't be driven headlessly, so the script calls exactly what a click on “Rotate image” or a press of a shortcut calls, with the real pointer hovering the photo.
 - Everything inside the windows is a real capture: the turned photos, the viewer and the settings page. The window frame, captions, labels, key caps and pointer are drawn.
 - Chrome's own image menu isn't drawn. Shot 1 names the item in a label instead.
 - The pages are made up (no real sites). Photos are CC0, from Wikimedia Commons, saved sideways in `store/tools/photos/`: “Tabby cat with blue eyes-3336579”, “Lighthouse Zadar”, “Lighthouse Chania evening sun”, “Belle Tout Lighthouse, June 2020 01”, “Lake Mountain Landscape”, “Bierstadt Lake Trail, Rocky Mountain National Park, 2009”.
@@ -83,7 +83,7 @@ English (also en_GB wording: "anti-clockwise").
 | `storage` | `chrome.storage.sync` keeps the user's settings (menu style, direction, extra keys and the “Never on” list), so Chrome Sync carries them to the user’s other computers through their own Google account, like Chrome’s own settings (signed out of Chrome, they stay on the computer). `chrome.storage.local` keeps single-key mode, where it runs and its chosen sites, which never sync because site access is granted on each computer; and, for the moment, any settings change Chrome Sync refused, until it’s retried; and whether Chrome was last seen in light or dark mode (`toolbarDark`, one true/false, this computer only, never synced), for the toolbar icon. Nothing is sent to the developer. Nothing else is stored. No install warning. |
 | `offscreen` | Keeps one small hidden page (`offscreen/offscreen.html`, reason `MATCH_MEDIA`) that reads whether Chrome is in light or dark mode (`matchMedia('(prefers-color-scheme: dark)')`, which the service worker can’t call), so the toolbar icon matches Chrome’s own icons. It only reads that one true/false and tells the extension’s service worker when it changes; it loads nothing and sends nothing anywhere. No install warning. |
 | `action` (manifest key, not a permission) | The toolbar button opens the settings page. Its icon is a plain glyph in Chrome’s own toolbar icon colours, light or dark to match Chrome. |
-| `commands` (manifest key) | Keyboard shortcuts for the image under the pointer: rotate (Alt+Shift+R, L), reset (Alt+Shift+0) and open in the viewer (Alt+Shift+V), changeable at chrome://extensions/shortcuts. No install warning. |
+| `commands` (manifest key) | Four keyboard commands for the image under the pointer (rotate clockwise, rotate counterclockwise, reset, open in the viewer), with no default keys: the user sets them at chrome://extensions/shortcuts. No install warning. |
 | Optional host permissions (`https://*/*`, `http://*/*`) | Asked for only when the user switches on single-key mode in settings, for all sites or the sites they list, from that click. Needed to listen for a single unmodified key (R, L, 0) on those pages, which Chrome's shortcuts can't do. The listener acts only when an image or video is under the pointer and the user isn't typing; it reads nothing else from the page. Switching the mode off gives the permissions back. |
 
 **Web accessible resources**: `content/keys.js` and the modules it imports (`shared/page.js`, `rotate.js`, `transform.js`, `settings.js`, `sites.js`), so the single-key content script can load the same code as the menu. They're code only and contain no data; a site can tell the extension is installed by requesting them.
@@ -127,7 +127,7 @@ especially with optional host permissions. Host the text below, e.g. at
 >
 > **No account, no analytics, no ads.** Settings sync is Chrome’s own, through your Google account. Nobody, including ArrayPress, receives any of your data.
 >
-> Questions: david@arraypress.com.
+> Questions: support@arraypress.com.
 
 ## Version History
 
@@ -141,12 +141,13 @@ especially with optional host permissions. Host the text below, e.g. at
 - [ ] **Developer account.** Register at https://chrome.google.com/webstore/devconsole (one-time US$5 fee) with the Google account that will own ArrayPress’s listings. Turn on 2-Step Verification, which the dashboard requires.
 - [ ] **Account tab.** Set the publisher name (ArrayPress) and a **contact email**, and verify that email. Complete the trader / non-trader declaration (EU Digital Services Act): as a company, ArrayPress Limited is likely a trader, which needs a verified address and phone number.
 - [x] **Make the GitHub repo public** (done 9 Nov 2026) (`arraypress/upright`). The About card’s Get help, Report an issue and Privacy policy links, and the privacy policy URL (`https://github.com/arraypress/upright/blob/main/PRIVACY.md`), all point into it; while it’s private they show GitHub’s 404. `npm run package` prints a reminder.
-- [ ] Decide the **support** contact (email or URL) and whether to add a homepage URL.
+- [x] The **support** contact: support@arraypress.com, for now (PRIVACY.md's Contact section is the one place it's written for people; change it there and here together).
+- [ ] Decide whether to add a homepage URL.
 
 **Build:**
 - [ ] `npm run package` (tests, then `release/upright-1.0.0.zip`; it refuses a test manifest). The zip is exactly the contents of `extension/`, less the icons' SVG sources (`test/package.test.js` checks this): `unzip -l release/upright-1.0.0.zip` lists 37 files, `manifest.json` at the root, then `_locales/` (2), `background/` (4), `content/` (2), `offscreen/` (2), `options/` (4), `viewer/` (4), `shared/` (8) and `icons/` (10 PNGs); no `store/`, `test/`, `scripts/` or `.test-builds/`.
 - [ ] **No placeholder links.** `extension/options/about-links.js` points at the GitHub repo (README, Issues, PRIVACY.md); `npm run package` warns loudly if any link is ever set back to example.com.
-- [ ] Load the `extension/` folder in a clean profile. Check that right-click › Rotate image, ⌥⇧R / Alt+Shift+R, the viewer and switching single-key mode on (its permission prompt) all work.
+- [ ] Load the `extension/` folder in a clean profile. Check that right-click › Rotate image, a shortcut set at chrome://extensions/shortcuts (none is set by default), the viewer and switching single-key mode on (its permission prompt) all work.
 
 **Developer Dashboard, in order:**
 1. **Items › New item**: upload `release/upright-1.0.0.zip`.

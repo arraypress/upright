@@ -112,6 +112,9 @@
   "optionsDirectionLeft": {
     "message": "Rotates counterclockwise"
   },
+  "optionsSingleHintNoKeys": {
+    "message": "With one item, keep clicking to keep turning: four clicks is upright again. For flips, zoom and Reset, choose Full menu, or set shortcuts on Chrome’s Keyboard shortcuts page."
+  },
   "optionsSingleHint": {
     "message": "With one item, keep clicking to keep turning: four clicks is upright again. For flips and zoom, point at it and press $VIEWER$ to open it in a new tab; $RESET$ resets it. Or choose Full menu to have everything on the right-click menu.",
     "placeholders": {
@@ -151,10 +154,7 @@
     "message": "Keyboard shortcuts"
   },
   "optionsShortcutsHint": {
-    "message": "Point at an image or video and press the shortcut."
-  },
-  "optionsShortcutNotSet": {
-    "message": "Not set"
+    "message": "Set a shortcut, then point at an image or video and press it."
   },
   "optionsNoShortcuts": {
     "message": "None set yet. Add them on Chrome’s Keyboard shortcuts page."

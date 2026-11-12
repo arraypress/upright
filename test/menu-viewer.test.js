@@ -6,8 +6,11 @@
  */
 import { describe, expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { SITE_LIST_MESSAGES } from '@arraypress/extension-kit';
+import { messageLookup } from '@arraypress/extension-kit/testing';
 import { actionFor, menuItems, OPEN_ID, PARENT_ID } from '../extension/background/menu.js';
+import { singleHint } from '../extension/options/single-hint.js';
 import { DEFAULTS, normalizeSettings } from '../extension/shared/settings.js';
 import { readViewerUrl, viewerUrl } from '../extension/shared/rotate.js';
 import { ACTIONS } from '../extension/shared/transform.js';
@@ -76,11 +79,24 @@ describe('menu', () => {
 describe('manifest', () => {
   const manifest = JSON.parse(readFileSync(new URL('../extension/manifest.json', import.meta.url), 'utf8'));
 
-  test('four shortcuts (Chrome allows at most four suggested keys), Alt+Shift+V opens the viewer', () => {
-    /** @type {Record<string, { suggested_key?: { default?: string } }>} */
+  test('four commands, each with its words, and no default keys: people set their own at chrome://extensions/shortcuts', () => {
+    /** @type {Record<string, { suggested_key?: unknown, description?: string }>} */
     const commands = manifest.commands;
-    const keys = Object.fromEntries(Object.entries(commands).map(([name, c]) => [name, c.suggested_key?.default]));
-    expect(keys).toEqual({ 'rotate-right': 'Alt+Shift+R', 'rotate-left': 'Alt+Shift+L', reset: 'Alt+Shift+0', 'open-viewer': 'Alt+Shift+V' });
+    expect(Object.keys(commands)).toEqual(['rotate-right', 'rotate-left', 'reset', 'open-viewer']);
+    for (const [name, command] of Object.entries(commands)) {
+      // Alt+Shift+letter types a character on a Mac, switches the keyboard's language on Windows, and clashed with the family's other extensions.
+      expect(command.suggested_key, name).toBeUndefined();
+      expect(command.description, name).toMatch(/^__MSG_command\w+__$/);
+    }
+  });
+
+  test('the one-item hint names the viewer’s and Reset’s shortcuts only when both are set', () => {
+    const t = messageLookup(fileURLToPath(new URL('../extension/', import.meta.url)));
+    const none = singleHint([{ name: 'open-viewer', shortcut: '' }, { name: 'reset', shortcut: '' }], t);
+    expect(none).toBe('With one item, keep clicking to keep turning: four clicks is upright again. For flips, zoom and Reset, choose Full menu, or set shortcuts on Chrome’s Keyboard shortcuts page.');
+    expect(singleHint([{ name: 'open-viewer', shortcut: 'Ctrl+Shift+9' }, { name: 'reset', shortcut: '' }], t)).toBe(none);
+    expect(singleHint([{ name: 'open-viewer', shortcut: 'Ctrl+Shift+9' }, { name: 'reset', shortcut: 'Ctrl+Shift+0' }], t))
+      .toContain('press Ctrl+Shift+9 to open it in a new tab; Ctrl+Shift+0 resets it');
   });
 
   test('named Upright, with no host permissions at install', () => {

@@ -37,31 +37,15 @@
   ],
   "commands": {
     "rotate-right": {
-      "suggested_key": {
-        "default": "Alt+Shift+R",
-        "mac": "Alt+Shift+R"
-      },
       "description": "__MSG_commandRotateRight__"
     },
     "rotate-left": {
-      "suggested_key": {
-        "default": "Alt+Shift+L",
-        "mac": "Alt+Shift+L"
-      },
       "description": "__MSG_commandRotateLeft__"
     },
     "reset": {
-      "suggested_key": {
-        "default": "Alt+Shift+0",
-        "mac": "Alt+Shift+0"
-      },
       "description": "__MSG_commandReset__"
     },
     "open-viewer": {
-      "suggested_key": {
-        "default": "Alt+Shift+V",
-        "mac": "Alt+Shift+V"
-      },
       "description": "__MSG_commandOpenViewer__"
     }
   },

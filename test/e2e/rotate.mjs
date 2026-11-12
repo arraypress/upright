@@ -455,7 +455,7 @@ try {
     await park();
   });
 
-  await check('shortcut: Alt+Shift+V opens the image under the pointer in one viewer tab, at its turn', async () => {
+  await check('shortcut: “Open in the viewer” opens the image under the pointer in one viewer tab, at its turn', async () => {
     await hover('hover-a');
     await command('rotate-right'); // Turned in the page first: the viewer starts there.
     const tabs = await tabCount();
@@ -635,29 +635,51 @@ try {
   // --- Options and single-key mode ---
 
   /**
-   * Open the options page, once it has listed the shortcuts (its last step).
+   * Open the options page, once it has shown its version (its last step).
    *
+   * @param {Record<string, string>} [keys] - Shortcuts as if the person had set them at
+   *   chrome://extensions/shortcuts (Chrome sets none by default, and has no API to set one):
+   *   what `chrome.commands.getAll` tells the page, by command.
    * @returns {Promise<Page>} The page.
    */
-  const openOptions = async () => {
+  const openOptions = async (keys = {}) => {
     const options = await context.newPage();
+    await options.addInitScript((set) => {
+      const getAll = chrome.commands.getAll.bind(chrome.commands);
+      chrome.commands.getAll = /** @type {typeof chrome.commands.getAll} */ (async () => (await getAll()).map((command) => ({ ...command, shortcut: set[command.name ?? ''] ?? command.shortcut })));
+    }, keys);
     await options.goto(`chrome-extension://${extensionId}/options/options.html`);
-    await options.waitForFunction(() => /** @type {HTMLElement} */ (document.getElementById('shortcuts')).children.length);
+    await options.waitForFunction(() => /** @type {HTMLElement} */ (document.getElementById('version')).textContent !== '');
     return options;
   };
   /** @typedef {typeof globalThis & { syncWrites: number }} Counted The worker, counting sync writes. */
   const syncWrites = () => worker.evaluate(() => /** @type {Counted} */ (globalThis).syncWrites);
 
-  await check('options: lists the shortcuts and shows every setting in English', async () => {
+  await check('no default shortcuts: Chrome has none set, the settings page lists none and names no key, and says where to set them', async () => {
+    const set = await worker.evaluate(async () => (await chrome.commands.getAll()).map((command) => [command.name, command.shortcut]));
+    // The four commands (and Chrome's own for the toolbar button), none with a key.
+    assert.deepEqual(set.map(([name]) => name).filter((name) => name !== '_execute_action').sort(), ['open-viewer', 'reset', 'rotate-left', 'rotate-right']);
+    assert.ok(set.every(([, shortcut]) => shortcut === ''), JSON.stringify(set));
     const options = await openOptions();
-    // Set shortcuts are listed; the way to change them is Chrome's own page, as a link row.
+    assert.equal(await options.locator('#shortcuts > *').count(), 0);
+    assert.equal(await options.locator('#edit-shortcuts').innerText(), 'Keyboard shortcuts\nNone set yet. Add them on Chrome’s Keyboard shortcuts page.');
+    const text = await options.locator('main').innerText();
+    assert.match(text, /For flips, zoom and Reset, choose Full menu, or set shortcuts on Chrome’s Keyboard shortcuts page\./);
+    assert.doesNotMatch(text, /Alt\+|⌥|Not set|press\s+to open/);
+    await options.close();
+  });
+
+  await check('options: lists the shortcuts that are set and shows every setting in English', async () => {
+    const options = await openOptions({ 'rotate-right': 'Ctrl+Shift+9', 'open-viewer': 'Ctrl+Shift+8', reset: 'Ctrl+Shift+0' });
+    // Set shortcuts are listed (and only those); the way to change them is Chrome's own page, as a link row.
     assert.equal(await options.locator('#edit-shortcuts').innerText(), 'Keyboard shortcuts');
     assert.equal(await options.locator('#no-shortcuts').isVisible(), false);
+    assert.equal(await options.locator('#shortcuts > *').count(), 3);
     const text = await options.locator('main').innerText();
-    assert.match(text, /Rotate the image under the pointer clockwise\s+(Alt|⌥)/);
+    assert.match(text, /Rotate the image under the pointer clockwise\s+Ctrl\+Shift\+9/);
     assert.match(text, /Single-key mode/);
     // The one-item hint names the viewer and reset shortcuts as they're set.
-    assert.match(text, /press (Alt\+Shift\+V|⌥⇧V) to open it in a new tab; (Alt\+Shift\+0|⌥⇧0) resets it/);
+    assert.match(text, /press Ctrl\+Shift\+8 to open it in a new tab; Ctrl\+Shift\+0 resets it/);
     assert.match(await options.title(), /^Upright settings$/);
     assert.equal(await worker.evaluate(() => chrome.action.getTitle({})), 'Upright', 'the toolbar button’s tooltip');
     assert.ok(!/(options|command)[A-Z]/.test(text), 'no unlocalised message names');

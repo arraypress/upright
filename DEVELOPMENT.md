@@ -6,7 +6,7 @@ How Upright works inside, for whoever changes it next. The user-facing overview 
 - **Right-click menu** (Options › Right-click menu):
   - *One item* (default): "Rotate image" / "Rotate video". Each click is a quarter turn, clockwise or counterclockwise as set.
   - *Full menu*: "Rotate ▸" clockwise, counterclockwise, 180°, flip horizontally, flip vertically, Reset, Open in new tab.
-- **Shortcuts** for whatever is under the pointer: Alt+Shift+R (clockwise), Alt+Shift+L (counterclockwise), Alt+Shift+0 (reset), Alt+Shift+V (open in the viewer at its current turn). Change them at chrome://extensions/shortcuts. With the one-item menu, Alt+Shift+V and Alt+Shift+0 are the way to the viewer's flips and zoom, and to Reset.
+- **Shortcuts** for whatever is under the pointer: four commands (clockwise, counterclockwise, reset, open in the viewer at its current turn) with **no default keys** (`test/menu-viewer.test.js` checks the manifest has no `suggested_key`): Alt+Shift+letter types a character on a Mac, switches the keyboard's language on Windows, and clashed with the family's other extensions, so people set their own at chrome://extensions/shortcuts. Everything that mentions a shortcut reads what's set (`chrome.commands.getAll`): the settings page lists only set ones (the kit's `setShortcuts`), and the one-item hint (`options/single-hint.js`) names the viewer's and Reset's keys only when both are set, else says to choose Full menu or set shortcuts.
 - **Single-key mode** (opt-in, asks for site access): R, L and 0 over media, with H/V flips as "extra keys". Never in text fields; a key that turns nothing goes to the page as normal.
 - **Viewer** (`viewer/viewer.html?src=…&r=90&f=1`): full window, rotate/flip/zoom buttons and keys R, Shift-R, H, V, 0, +/−, F, 1. CSS only, so any site's media shows. "Save rotated copy" is offered only when the site allows reading the pixels (CORS).
 
@@ -64,3 +64,6 @@ The same rules as Tabby's (`../tabby/CLAUDE.md`, "Wording") and Better Tab Actio
 - The options page is the extension's only page, so it keeps its name in the title: "Upright settings" (Tabby, with several pages, calls its own just "Settings").
 - The name is in one place, `extShortName` (and the store name, `extName`): other messages take it as `$NAME$` (content `$1`), which the kit's `t` and `data-i18n` fill in. The toolbar button's tooltip is just the name (`__MSG_extShortName__`), as the manifest can't fill a placeholder.
 - `en_GB` overrides only the words that differ ("anti-clockwise"); change it in step with `en`.
+
+## Support contact
+support@arraypress.com, for now: the contact for support and privacy questions. It is written in PRIVACY.md (Contact) and CHROMEWEBSTORE.md (Support URL and its checklist line) and nowhere in the code; bug reports go to the repo's GitHub Issues, as the About card's links do. `test/package.test.js` checks the two files agree.

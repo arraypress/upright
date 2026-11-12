@@ -6,7 +6,11 @@ First version.
 
 - Right-click “Rotate image” / “Rotate video” (one item, a quarter turn per click), or the full
   Rotate menu: clockwise, counterclockwise, 180°, flips, reset, open in a new tab.
-- Shortcuts for the media under the pointer: Alt+Shift+R / L / 0 / V.
+- Shortcuts for the media under the pointer (rotate clockwise and counterclockwise, reset, open in
+  the viewer), with no default keys: you choose them at chrome://extensions/shortcuts. (Alt+Shift+R /
+  L / 0 / V were dropped before release: Alt+Shift+letter types a character on a Mac, switches the
+  keyboard’s language on Windows, and clashed with other extensions.) The settings page lists the
+  ones you’ve set and never names a key that isn’t.
 - Optional single-key mode (R, L, 0) on chosen sites.
 - Viewer with rotate, flip, zoom and “Save rotated copy” where the site allows it.
 - Settings sync through Chrome Sync; settings page styled like chrome://settings, with an About card.

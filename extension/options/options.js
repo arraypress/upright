@@ -13,6 +13,7 @@ import {
   siteOrigin, statusFlasher, valueRow, withoutSite, withSite, withSiteReplaced,
 } from '../vendor/extension-kit/index.js';
 import { ABOUT_LINKS } from './about-links.js';
+import { singleHint } from './single-hint.js';
 import { ALL_SITES } from '../shared/registration.js';
 import { normalizeSettings, settingsStore } from '../shared/settings.js';
 
@@ -195,15 +196,8 @@ const shortcuts = setShortcuts(
 // Only the shortcuts that are set; the link row below goes to Chrome's page to change them.
 byId('shortcuts').replaceChildren(...shortcuts.map(({ title, shortcut }) => valueRow(title, shortcut)));
 byId('no-shortcuts').hidden = shortcuts.length > 0;
-/**
- * A command's shortcut as it's set now (people change them), or "not set".
- *
- * @param {string} name - The command.
- * @returns {string} Its keys.
- */
-const keyFor = (name) => commands.find((command) => command.name === name)?.shortcut || t('optionsShortcutNotSet');
-// The one-item hint names the shortcuts.
-byId('single-hint').textContent = t('optionsSingleHint', [keyFor('open-viewer'), keyFor('reset')]);
+// The one-item hint names the viewer's and Reset's shortcuts when they're set, and where to set them when not.
+byId('single-hint').textContent = singleHint(commands, t);
 // chrome:// pages can't be opened from a link on an extension page.
 byId('edit-shortcuts').addEventListener('click', () => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }));
 

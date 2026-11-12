@@ -7,7 +7,7 @@
  * that exposes the menu-click and shortcut handlers, and access to http://127.0.0.1) in
  * Playwright's Chromium: Playwright 1.64.0 from the Tabby repo, launched the way Tabby's e2e tests
  * do. Chrome's native right-click menu and keyboard shortcuts can't be driven headlessly, so the
- * shots call exactly what a click on "Rotate image" or a press of ⌥⇧R calls, on real pages, with the
+ * shots call exactly what a click on "Rotate image" or a press of a shortcut calls, on real pages, with the
  * real pointer hovering. Everything inside the windows is a real capture: the turned photos, the
  * viewer and the settings page. The window frame, captions, labels, key caps and pointer are drawn.
  *
@@ -181,7 +181,7 @@ const shots = [];
   </body></html>`);
 }
 
-// 2 and 3. Hover and press ⌥⇧R in a gallery; then ⌥⇧V opens it in the viewer.
+// 2 and 3. Point at a photo in a gallery and press a shortcut (people set their own: none ship); then open it in the viewer.
 const gallery = await context.newPage();
 await gallery.setViewportSize(ZOOMED.content);
 await gallery.goto(`${origin}/gallery`);
@@ -215,20 +215,13 @@ const galleryTabs = (activeViewer, viewerTitle = '') => [
   const z = ZOOMED.zoom;
   const px = WIN.x + (at.x + 20) * z;
   const py = WIN.y + (WIN.strip + WIN.toolbar + at.y + 30) * z;
-  /** @type {(k: string) => string} A key cap. */
-  const key = (k) => `<span class="key">${k}</span>`;
   shots.push(canvas({
-    caption: 'Hover and press ⌥⇧R (Alt+Shift+R)',
+    caption: 'Or point at it and press a shortcut you choose',
     chrome: windowChrome({ tabs: galleryTabs(false), url: 'coastline.example/lighthouse-walks/photos', urlHost: 'coastline.example', w: ZOOMED.w }),
     content: page,
     geo: ZOOMED,
     overlays: '',
-  }).replace('</body>', `<style>
-      .keys { position: absolute; display: flex; gap: 8px; z-index: 30; }
-      .key { min-width: 46px; height: 46px; padding: 0 10px; box-sizing: border-box; display: grid; place-items: center; border-radius: 9px; background: #fff; color: #1f1f1f; font: 500 22px system-ui; box-shadow: 0 0 0 1px rgba(0,0,0,.12), 0 3px 0 rgba(0,0,0,.14), 0 6px 16px rgba(0,0,0,.12); }
-    </style>
-    ${cursor(px, py)}
-    <div class="keys" style="left:${px + 30}px;top:${py + 22}px">${key('⌥')}${key('⇧')}${key('R')}</div></body>`));
+  }).replace('</body>', `${cursor(px, py)}</body>`));
 }
 {
   const at = await centre('zadar');
@@ -267,7 +260,7 @@ const galleryTabs = (activeViewer, viewerTitle = '') => [
   await page.close();
 }
 
-// 5. The viewer in dark mode: ⌥⇧L turns the other sideways photo, ⌥⇧V opens it, then zoom in.
+// 5. The viewer in dark mode: a shortcut turns the other sideways photo, another opens it, then zoom in.
 {
   const at = await centre('chania');
   await gallery.mouse.move(at.x, at.y);

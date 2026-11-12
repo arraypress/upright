@@ -20,4 +20,4 @@ Settings sync is Chrome’s own, through your Google account. Nobody, including 
 
 ## Contact
 
-Questions: [open an issue](https://github.com/arraypress/upright/issues) or email david@arraypress.com.
+Questions: [open an issue](https://github.com/arraypress/upright/issues) or email support@arraypress.com.
