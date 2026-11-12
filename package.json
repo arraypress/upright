@@ -18,7 +18,7 @@
   "author": "ArrayPress Limited",
   "license": "MIT",
   "devDependencies": {
-    "@arraypress/extension-kit": "^1.11.0",
+    "@arraypress/extension-kit": "^1.11.1",
     "@eslint/js": "^10.0.1",
     "@types/chrome": "^0.3.7",
     "@types/node": "^26.6.6",
