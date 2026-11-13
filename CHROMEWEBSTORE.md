@@ -1,6 +1,6 @@
 # Chrome Web Store Listing — Upright
 
-> Last Updated: 2026-11-09
+> Last Updated: 2026-11-13
 
 Single source of truth for the Developer Dashboard. Update it in the same change as anything
 that alters the listing, permissions, data handling or version. Not shipped: `npm run package`
@@ -65,9 +65,9 @@ English (also en_GB wording: "anti-clockwise").
 | Marquee Promo Tile [OPTIONAL] | 1400×560 | ⬜ Not made | Only used if the store features the extension |
 
 **How they were made.** `node store/tools/make-screenshots.mjs` regenerates all six.
-- It runs `scripts/build-e2e.mjs` and loads that build in Playwright's Chromium (Playwright 1.64.0 from the Tabby repo). That build is a copy of `extension/` plus the test hook.
+- It runs `scripts/build-e2e.mjs` and loads that build in Playwright's Chromium (this repo's own Playwright). That build is a copy of `extension/` plus the test hook.
 - Chrome's right-click menu and shortcuts can't be driven headlessly, so the script calls exactly what a click on “Rotate image” or a press of a shortcut calls, with the real pointer hovering the photo.
-- Everything inside the windows is a real capture: the turned photos, the viewer and the settings page. The window frame, captions, labels, key caps and pointer are drawn.
+- Everything inside the windows is a real capture: the turned photos, the viewer and the settings page. The window frame, captions, labels and pointer are drawn.
 - Chrome's own image menu isn't drawn. Shot 1 names the item in a label instead.
 - The pages are made up (no real sites). Photos are CC0, from Wikimedia Commons, saved sideways in `store/tools/photos/`: “Tabby cat with blue eyes-3336579”, “Lighthouse Zadar”, “Lighthouse Chania evening sun”, “Belle Tout Lighthouse, June 2020 01”, “Lake Mountain Landscape”, “Bierstadt Lake Trail, Rocky Mountain National Park, 2009”.
 
@@ -86,7 +86,7 @@ English (also en_GB wording: "anti-clockwise").
 | `commands` (manifest key) | Four keyboard commands for the image under the pointer (rotate clockwise, rotate counterclockwise, reset, open in the viewer), with no default keys: the user sets them at chrome://extensions/shortcuts. No install warning. |
 | Optional host permissions (`https://*/*`, `http://*/*`) | Asked for only when the user switches on single-key mode in settings, for all sites or the sites they list, from that click. Needed to listen for a single unmodified key (R, L, 0) on those pages, which Chrome's shortcuts can't do. The listener acts only when an image or video is under the pointer and the user isn't typing; it reads nothing else from the page. Switching the mode off gives the permissions back. |
 
-**Web accessible resources**: `content/keys.js` and the modules it imports (`shared/page.js`, `rotate.js`, `transform.js`, `settings.js`, `sites.js`), so the single-key content script can load the same code as the menu. They're code only and contain no data; a site can tell the extension is installed by requesting them.
+**Web accessible resources**: `content/keys.js` and the modules it imports (`shared/page.js`, `rotate.js`, `transform.js` and `settings.js`, and extension-kit's `sites/sites.js`, `settings/store.js` and `settings/storage.js`; `test/package.test.js` checks the list against the imports), so the single-key content script can load the same code as the menu. They're code only and contain no data; a site can tell the extension is installed by requesting them.
 
 **Remote code**: No. Everything is in the package.
 
@@ -109,31 +109,13 @@ Settings sync through the user’s own Chrome Sync (their Google account), like 
 
 Certify all three: not sold to third parties; not used or transferred for purposes unrelated to the single purpose; not used to decide creditworthiness or for lending.
 
-**Privacy policy URL**: optional when nothing is collected, but worth having for reviewers,
-especially with optional host permissions. Host the text below, e.g. at
-`https://arraypress.com/upright/privacy`.
-
-### Draft privacy policy
-
-> **Upright: privacy**
->
-> Upright works entirely on your computer. It collects nothing and sends nothing.
->
-> **What it touches:** the image or video you right-click or point at, and only when you choose a Rotate item or press one of its shortcuts. It turns it with the page’s own styling; it doesn’t read or save the picture. If you switch on single-key mode, it listens for R, L and 0 on the sites you chose, only while you point at an image or video and aren’t typing.
->
-> **What it keeps:** your settings, in Chrome’s own storage. If you’re signed in to Chrome with sync on, Chrome Sync keeps most of them in your Google account so your other computers get the same settings, as it does for Chrome’s own settings. Single-key mode and its sites stay on each computer.
->
-> **Network:** Upright makes no requests of its own. The viewer shows the image or video from its usual address, as the page did. To offer “Save rotated copy”, it asks the site for the image once more.
->
-> **No account, no analytics, no ads.** Settings sync is Chrome’s own, through your Google account. Nobody, including ArrayPress, receives any of your data.
->
-> Questions: support@arraypress.com.
+**Privacy policy URL**: `https://github.com/arraypress/upright/blob/main/PRIVACY.md` ([PRIVACY.md](PRIVACY.md); the repository is public).
 
 ## Version History
 
 | Version | Date | Notes |
 |---|---|---|
-| 1.0.0 | 2026-11-09 | First build, not yet submitted. Settings always sync through Chrome Sync, except single-key mode and its sites (the opt-in switch is gone; earlier test installs’ settings move over by themselves). About card at the end of the settings page. |
+| 1.0.0 | 2026-11-09 | First build, not yet submitted. |
 
 ## Submit checklist
 
@@ -145,7 +127,7 @@ especially with optional host permissions. Host the text below, e.g. at
 - [ ] Decide whether to add a homepage URL.
 
 **Build:**
-- [ ] `npm run package` (tests, then `release/upright-1.0.0.zip`; it refuses a test manifest). The zip is exactly the contents of `extension/`, less the icons' SVG sources (`test/package.test.js` checks this): `unzip -l release/upright-1.0.0.zip` lists 37 files, `manifest.json` at the root, then `_locales/` (2), `background/` (4), `content/` (2), `offscreen/` (2), `options/` (4), `viewer/` (4), `shared/` (8) and `icons/` (10 PNGs); no `store/`, `test/`, `scripts/` or `.test-builds/`.
+- [ ] `npm run package` (tests, then `release/upright-1.0.0.zip`; it refuses a test manifest). The zip is exactly the contents of `extension/`, less the icons' SVG sources and `.d.ts` files (`test/package.test.js` checks this): `unzip -l release/upright-1.0.0.zip` lists 73 files, `manifest.json` at the root, then `_locales/` (2), `background/` (2), `content/` (2), `icons/` (10 PNGs), `offscreen/` (2), `options/` (5), `shared/` (5), `viewer/` (4) and `vendor/` (40, the kit); no `store/`, `test/`, `scripts/` or `.test-builds/`.
 - [ ] **No placeholder links.** `extension/options/about-links.js` points at the GitHub repo (README, Issues, PRIVACY.md); `npm run package` warns loudly if any link is ever set back to example.com.
 - [ ] Load the `extension/` folder in a clean profile. Check that right-click › Rotate image, a shortcut set at chrome://extensions/shortcuts (none is set by default), the viewer and switching single-key mode on (its permission prompt) all work.
 
@@ -157,7 +139,7 @@ especially with optional host permissions. Host the text below, e.g. at
    - small promo tile `store/promo-440x280.png`.
 
    Add the homepage and support URLs if you have them.
-3. **Privacy practices**: fill in the single purpose and each justification (`activeTab`, `contextMenus`, `scripting`, `storage`, the optional host permissions). Then remote code: No, no data types ticked, the three certifications, and the privacy policy URL.
+3. **Privacy practices**: fill in the single purpose and each justification (`activeTab`, `contextMenus`, `scripting`, `storage`, `offscreen`, the optional host permissions). Then remote code: No, no data types ticked, the three certifications, and the privacy policy URL.
 4. **Distribution**: Free; Public; all regions (or as you prefer).
 5. **Test instructions** (if asked): none needed. There’s no login; right-click any image.
 6. **Submit for review.** Optionally untick “Publish automatically after approval” to choose the moment.

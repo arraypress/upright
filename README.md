@@ -57,7 +57,7 @@ npm run package      # tests, then release/upright-<version>.zip for the Chrome 
 ```
 
 How it works inside (finding the right image, composing with the page’s own styles, the viewer,
-wording rules) is in [DEVELOPMENT.md](DEVELOPMENT.md). Store listing text and screenshots:
+wording rules) is in [CLAUDE.md](CLAUDE.md). Store listing text and screenshots:
 `CHROMEWEBSTORE.md` and `store/`.
 
 ## License
