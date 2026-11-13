@@ -1,29 +1,26 @@
 # Upright – Rotate Images & Videos
 
 Turn sideways photos and phone videos upright, right on the page. Right-click → **Rotate image**,
-or point at it and press a shortcut you choose. The page doesn’t jump: the picture turns in its own space.
+or point at it and press a shortcut you choose. The page doesn’t jump: the picture turns in its
+own space.
 
 ![A sideways photo turned upright on the page](store/screenshot-1.png)
 
 ## What it does
 
-- **Right-click menu:** “Rotate image” / “Rotate video”, a quarter turn per click. Or switch to the
-  full menu: clockwise, counterclockwise, 180°, flip horizontally, flip vertically, reset, and open
-  in a new tab.
-- **Shortcuts** for whatever is under the pointer. None are set when you install it: choose your own
-  at `chrome://extensions/shortcuts` (the settings page links there, and lists the ones you’ve set):
-  - rotate clockwise
-  - rotate counterclockwise
-  - reset
-  - open it in the viewer
-- **Single-key mode** (off by default): hover and press **R**, **L** or **0**, on all sites or only the
-  ones you choose. Never while you’re typing.
-- **Viewer:** a full-window view with rotate, flip and zoom, and “Save rotated copy” where the site
+- **Right-click menu**: “Rotate image” or “Rotate video”, a quarter turn per click. The full menu
+  adds counterclockwise, 180°, flip, reset and open in a new tab.
+- **Shortcuts** for whatever is under the pointer. None are set: choose yours at
+  chrome://extensions/shortcuts.
+- **Single-key mode** (off by default): hover and press **R**, **L** or **0**. Never while you’re
+  typing.
+- **Viewer**: a full-window view with rotate, flip and zoom, and “Save rotated copy” where the site
   allows it.
 
-It works on images, `<picture>` elements and videos, including responsive images served in several
-sizes. It can’t turn CSS background images, canvas drawings, or media inside frames from another
-site.
+## Good to know
+
+- Works on images, `<picture>` elements and videos.
+- It can’t turn CSS background images, canvas drawings, or media inside frames from another site.
 
 ## Privacy
 
@@ -46,14 +43,14 @@ Installing it shows no warnings. Single-key mode asks for site access when you s
 
 Needs Chrome 120 or later.
 
-1. Download or clone this repository.
+1. Download or clone this repository, and run `npm install` (it copies the kit into `extension/vendor/`).
 2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and choose the
    `extension/` folder.
 
 ## Development
 
 ```sh
-npm install          # vitest, Playwright, ESLint and TypeScript
+npm install          # vitest, Playwright, ESLint and TypeScript; copies the kit into extension/vendor/
 npm test             # lint, type-check, unit tests, and a check for copied code
 npm run test:e2e     # browser tests in Playwright's Chromium
 npm run package      # tests, then release/upright-<version>.zip for the Chrome Web Store
@@ -62,37 +59,6 @@ npm run package      # tests, then release/upright-<version>.zip for the Chrome 
 How it works inside (finding the right image, composing with the page’s own styles, the viewer,
 wording rules) is in [DEVELOPMENT.md](DEVELOPMENT.md). Store listing text and screenshots:
 `CHROMEWEBSTORE.md` and `store/`.
-
-## Layout
-
-The extension is the `extension/` folder: it's what you load in Chrome, and exactly what
-`npm run package` zips (less the icons' SVG sources). The rest of the repo is the project around it.
-
-```
-upright/
-├── README.md  LICENSE  PRIVACY.md  CHANGELOG.md  CHROMEWEBSTORE.md  DEVELOPMENT.md
-├── package.json  package-lock.json  .gitignore
-├── tsconfig.json  eslint.config.js  .jscpd.json   type-checking, lint and copied-code settings
-├── extension/                  the extension: load this folder, zip its contents
-│   ├── manifest.json
-│   ├── _locales/               en and en_GB
-│   ├── background/             the service worker: background.js (menu, shortcuts), menu.js
-│   ├── content/                single-key mode, in web pages: keys-loader.js, keys.js
-│   ├── offscreen/              offscreen.html/.js: tells the worker Chrome's light or dark mode
-│   ├── options/                the settings page: options.html/.css/.js, about-links.js
-│   ├── viewer/                 the full-window viewer: viewer.html/.css/.js, viewer-math.js
-│   ├── shared/                 loaded by more than one of those: transform.js (the maths),
-│   │                           page.js (run in the page), rotate.js, settings.js, sites.js,
-│   │                           registration.js
-│   ├── vendor/extension-kit/   @arraypress/extension-kit's browser half, copied in by npm install
-│   │                           (not committed): chrome-ui.css, the settings store, the toolbar glyph
-│   └── icons/                  the extension icons (and icon.svg), and toolbar/ (the light and
-│                               dark glyph)
-├── test/                       unit tests (vitest), and e2e/ (Playwright checks in real Chromium,
-│                               with their fixtures and the test build's hook and its client)
-├── scripts/                    packaging, the e2e build, icon rendering, the local test server
-└── store/                      Chrome Web Store screenshots and promo tile, and tools/ that make them
-```
 
 ## License
 
