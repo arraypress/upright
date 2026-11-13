@@ -5,11 +5,10 @@
  *
  * Runs scripts/build-e2e.mjs and loads that build (a copy of extension/ plus the test hook
  * that exposes the menu-click and shortcut handlers, and access to http://127.0.0.1) in
- * Playwright's Chromium: Playwright 1.64.0 from the Tabby repo, launched the way Tabby's e2e tests
- * do. Chrome's native right-click menu and keyboard shortcuts can't be driven headlessly, so the
+ * Playwright's Chromium. Chrome's native right-click menu and keyboard shortcuts can't be driven headlessly, so the
  * shots call exactly what a click on "Rotate image" or a press of a shortcut calls, on real pages, with the
  * real pointer hovering. Everything inside the windows is a real capture: the turned photos, the
- * viewer and the settings page. The window frame, captions, labels, key caps and pointer are drawn.
+ * viewer and the settings page. The window frame, captions, labels and pointer are drawn.
  *
  * Pages are made up (no real sites) and served from 127.0.0.1; the address bar shows a made-up
  * name. Photos are CC0 from Wikimedia Commons, saved sideways here (photos/).
